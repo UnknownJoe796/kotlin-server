@@ -5,7 +5,9 @@ import graphql.Scalars
 import graphql.language.Field
 import graphql.schema.*
 
-class GraphQLSchemaGenerator(val dao: DAO, val tables: List<Table> = ArrayList<Table>()) {
+fun Schema.graphQL(dao: DAO): GraphQLSchema = GraphQLSchemaGenerator(dao, this).build()
+
+private class GraphQLSchemaGenerator(val dao: DAO, val schema: Schema) {
 
     val schemaBuilder = GraphQLSchema.newSchema()
 
@@ -14,6 +16,17 @@ class GraphQLSchemaGenerator(val dao: DAO, val tables: List<Table> = ArrayList<T
     }
     val inputTypes = Cache<Table, GraphQLInputType> {
         generateInputType(it)
+    }
+    val enums = Cache<ServerEnum, GraphQLEnumType> { enum ->
+        GraphQLEnumType.newEnum()
+                .name(enum.name)
+                .description(enum.description)
+                .also {
+                    for (value in enum.values) {
+                        it.value(value.name, value.name, value.description)
+                    }
+                }
+                .build()
     }
 
     fun GraphQLFieldDefinition.Builder.dataFetcherCatching(action: (DataFetchingEnvironment) -> Any?) = dataFetcher { environment ->
@@ -115,10 +128,13 @@ class GraphQLSchemaGenerator(val dao: DAO, val tables: List<Table> = ArrayList<T
         ServerType.TDouble -> Scalars.GraphQLFloat
         ServerType.TString -> Scalars.GraphQLString
         is ServerType.TPointer -> {
-            outputTypes[this.table]
+            outputTypes[this.table]!!
         }
         is ServerType.TListPointers -> {
             GraphQLList.list(outputTypes[this.table])
+        }
+        is ServerType.TEnum -> {
+            enums[this.enum]!!
         }
     }
 
@@ -137,13 +153,16 @@ class GraphQLSchemaGenerator(val dao: DAO, val tables: List<Table> = ArrayList<T
         is ServerType.TListPointers -> {
             GraphQLList.list(inputTypes[this.table])
         }
+        is ServerType.TEnum -> {
+            enums[this.enum]!!
+        }
     }
 
     fun build() = schemaBuilder.apply {
         query(GraphQLObjectType.newObject()
                 .name("QueryType")
                 .apply {
-                    for (table in tables) {
+                    for (table in schema.tables.values) {
                         field(GraphQLFieldDefinition.newFieldDefinition()
                                 .name(table.tableName)
                                 .description(table.tableDescription)
@@ -163,7 +182,7 @@ class GraphQLSchemaGenerator(val dao: DAO, val tables: List<Table> = ArrayList<T
                                 }
                         )
                     }
-                    for (table in tables) {
+                    for (table in schema.tables.values) {
                         field(GraphQLFieldDefinition.newFieldDefinition()
                                 .name("Query" + table.tableName)
                                 .description(table.tableDescription)
@@ -200,7 +219,7 @@ class GraphQLSchemaGenerator(val dao: DAO, val tables: List<Table> = ArrayList<T
         mutation(GraphQLObjectType.newObject()
                 .name("MutationType")
                 .apply {
-                    for (table in tables) {
+                    for (table in schema.tables.values) {
                         field(GraphQLFieldDefinition.newFieldDefinition()
                                 .name(table.tableName)
                                 .description(table.tableDescription)

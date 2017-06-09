@@ -50,6 +50,8 @@ dependencies {
     compile group: 'org.mindrot', name: 'jbcrypt', version: '0.3m'
     compile group: 'com.graphql-java', name: 'graphql-java', version: '3.0.0'
 
+    compile group: 'org.postgresql', name: 'postgresql', version: '42.1.1'
+
 //    compile 'com.esotericsoftware:reflectasm:1.11.3'
 
     compile project(path: ':kotlin-core')

@@ -15,5 +15,5 @@ sealed class ServerType {
     class TPointer(val table: Table) : ServerType()
     class TListPointers(val table: Table) : ServerType()
 
-    class TEnum(val enum: Enum<*>) : ServerType()
+    class TEnum(val enum: ServerEnum) : ServerType()
 }
