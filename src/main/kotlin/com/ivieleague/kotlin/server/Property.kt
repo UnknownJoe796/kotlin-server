@@ -9,6 +9,5 @@ data class Property(
         val read: AccessRules = listOf(listOf()),
         val write: AccessRules = listOf(listOf()),
         val versionStart: Int = 0,
-        val versionEnd: Int = Int.MAX_VALUE,
-        val calculated: ((String, DAO) -> Any?)? = null
+        val versionEnd: Int = Int.MAX_VALUE
 )

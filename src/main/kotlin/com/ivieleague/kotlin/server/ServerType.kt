@@ -11,7 +11,8 @@ sealed class ServerType {
     object TFloat : ServerType()
     object TDouble : ServerType()
 
-    object TString : ServerType()
+    object TShortString : ServerType()
+    object TLongString : ServerType()
     class TPointer(val table: Table) : ServerType()
     class TListPointers(val table: Table) : ServerType()
 

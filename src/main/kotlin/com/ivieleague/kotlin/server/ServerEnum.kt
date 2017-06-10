@@ -8,5 +8,5 @@ class ServerEnum(
         val description: String,
         val values: Set<Value>
 ) {
-    data class Value(val name: String, val description: String)
+    data class Value(val name: String, val description: String, val value: Int)
 }

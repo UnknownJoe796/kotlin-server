@@ -11,8 +11,7 @@ abstract class TableImpl(override val tableName: String, override val tableDescr
             read: AccessRules = listOf(listOf()),
             write: AccessRules = listOf(listOf()),
             versionStart: Int = 0,
-            versionEnd: Int = Int.MAX_VALUE,
-            calculated: ((String, DAO) -> Any?)? = null
+            versionEnd: Int = Int.MAX_VALUE
     ): Property {
         val prop = Property(
                 name = name,
@@ -22,8 +21,7 @@ abstract class TableImpl(override val tableName: String, override val tableDescr
                 read = read,
                 write = write,
                 versionStart = versionStart,
-                versionEnd = versionEnd,
-                calculated = calculated
+                versionEnd = versionEnd
         )
         properties[name] = prop
         return prop

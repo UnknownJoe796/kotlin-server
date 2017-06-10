@@ -126,7 +126,8 @@ private class GraphQLSchemaGenerator(val dao: DAO, val schema: Schema) {
         ServerType.TLong -> Scalars.GraphQLLong
         ServerType.TFloat -> Scalars.GraphQLFloat
         ServerType.TDouble -> Scalars.GraphQLFloat
-        ServerType.TString -> Scalars.GraphQLString
+        ServerType.TShortString -> Scalars.GraphQLString
+        ServerType.TLongString -> Scalars.GraphQLString
         is ServerType.TPointer -> {
             outputTypes[this.table]!!
         }
@@ -146,7 +147,8 @@ private class GraphQLSchemaGenerator(val dao: DAO, val schema: Schema) {
         ServerType.TLong -> Scalars.GraphQLLong
         ServerType.TFloat -> Scalars.GraphQLFloat
         ServerType.TDouble -> Scalars.GraphQLFloat
-        ServerType.TString -> Scalars.GraphQLString
+        ServerType.TShortString -> Scalars.GraphQLString
+        ServerType.TLongString -> Scalars.GraphQLString
         is ServerType.TPointer -> {
             inputTypes[this.table]!!
         }
