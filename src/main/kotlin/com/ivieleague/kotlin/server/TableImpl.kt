@@ -6,7 +6,7 @@ abstract class TableImpl(override val tableName: String, override val tableDescr
     fun property(
             name: String,
             description: String = "",
-            type: ServerType,
+            type: ScalarType,
             default: Any?,
             read: AccessRules = listOf(listOf()),
             write: AccessRules = listOf(listOf()),
