@@ -1,4 +1,4 @@
-package com.ivieleague.kotlin.server
+package com.ivieleague.kotlin.server.core
 
 import kotlin.reflect.KClass
 

@@ -1,6 +1,11 @@
 package com.ivieleague.kotlin.server
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.ivieleague.kotlin.server.core.Condition
+import com.ivieleague.kotlin.server.core.Instance
+import com.ivieleague.kotlin.server.core.TableAccess
+import com.ivieleague.kotlin.server.core.defaultRead
+import org.jetbrains.ktor.application.ApplicationCall
 import org.jetbrains.ktor.application.call
 import org.jetbrains.ktor.application.receive
 import org.jetbrains.ktor.http.ContentType
@@ -9,53 +14,47 @@ import org.jetbrains.ktor.routing.*
 
 val json = ObjectMapper()
 
-fun Route.restPlus(dao: DAO, schema: Schema) {
-    for ((_, table) in schema.tables) {
-        restPlus(dao, table)
-    }
-}
-
-fun Route.restPlus(dao: DAO, table: Table) {
-    get("${table.tableName}") {
-        val result = dao.query(table, Condition.Always, table.defaultOutput())
+fun Route.restPlus(tableAccess: TableAccess, userGetter: (ApplicationCall) -> Instance? = { null }) {
+    get("") {
+        val result = tableAccess.query(userGetter.invoke(it), Condition.Always, tableAccess.table.defaultRead())
         val stringResult = json.writeValueAsString(result.map { JSON.serializeInstance(it) })
         it.respondText(stringResult, ContentType.Application.Json)
     }
-    get("${table.tableName}/{id}") {
-        val result = dao.get(table, call.parameters["id"]!!, table.defaultOutput())
+    get("/{id}") {
+        val result = tableAccess.get(userGetter.invoke(it), call.parameters["id"]!!, tableAccess.table.defaultRead())
         val stringResult = result?.let { json.writeValueAsString(JSON.serializeInstance(it)) }
         it.respondText(stringResult ?: "{}", ContentType.Application.Json)
     }
-    post("${table.tableName}/query") {
+    post("/query") {
         val requestString = it.request.receive<String>()
-        val request = JSON.parseOutput(table, json.readValue(requestString, Map::class.java) as Map<String, Any?>)
-        val result = dao.query(table, Condition.Always, request)
+        val request = JSON.parseRead(tableAccess.table, json.readValue(requestString, Map::class.java) as Map<String, Any?>)
+        val result = tableAccess.query(userGetter.invoke(it), Condition.Always, request)
         val stringResult = json.writeValueAsString(result.map { JSON.serializeInstance(it) })
         it.respondText(stringResult, ContentType.Application.Json)
     }
-    post("${table.tableName}/{id}/query") {
+    post("/{id}/query") {
         val requestString = it.request.receive<String>()
-        val request = JSON.parseOutput(table, json.readValue(requestString, Map::class.java) as Map<String, Any?>)
-        val result = dao.get(table, call.parameters["id"]!!, request)
+        val request = JSON.parseRead(tableAccess.table, json.readValue(requestString, Map::class.java) as Map<String, Any?>)
+        val result = tableAccess.get(userGetter.invoke(it), call.parameters["id"]!!, tableAccess.table.defaultRead())
         val stringResult = result?.let { json.writeValueAsString(JSON.serializeInstance(it)) }
         it.respondText(stringResult ?: "{}", ContentType.Application.Json)
     }
-    post("${table.tableName}") {
+    post("") {
         val inputString = it.request.receive<String>()
-        val input = JSON.parseInput(table, null, json.readValue(inputString, Map::class.java) as Map<String, Any?>)
-        val result = dao.update(table, input)
+        val input = JSON.parseWrite(tableAccess.table, null, json.readValue(inputString, Map::class.java) as Map<String, Any?>)
+        val result = tableAccess.update(userGetter.invoke(it), input)
         val stringResult = result.let { json.writeValueAsString(JSON.serializeInstance(it)) }
         it.respondText(stringResult ?: "{}", ContentType.Application.Json)
     }
-    put("${table.tableName}/{id}") {
+    put("/{id}") {
         val inputString = it.request.receive<String>()
-        val input = JSON.parseInput(table, call.parameters["id"]!!, json.readValue(inputString, Map::class.java) as Map<String, Any?>)
-        val result = dao.update(table, input)
+        val input = JSON.parseWrite(tableAccess.table, call.parameters["id"]!!, json.readValue(inputString, Map::class.java) as Map<String, Any?>)
+        val result = tableAccess.update(userGetter.invoke(it), input)
         val stringResult = result.let { json.writeValueAsString(JSON.serializeInstance(it)) }
         it.respondText(stringResult ?: "{}", ContentType.Application.Json)
     }
-    delete("${table.tableName}/{id}") {
-        val result = dao.delete(table, call.parameters["id"]!!)
+    delete("/{id}") {
+        val result = tableAccess.delete(userGetter.invoke(it), call.parameters["id"]!!)
         if (result) {
             it.respondText("$result", ContentType.Application.Json)
         } else {

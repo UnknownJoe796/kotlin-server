@@ -1,44 +1,43 @@
 package com.ivieleague.kotlin.server
 
+import com.ivieleague.kotlin.server.core.*
 import java.util.*
 
 
 object JSON {
-    fun parseOutput(table: Table, map: Map<String, Any?>): Output {
+    fun parseRead(table: Table, map: Map<String, Any?>): Read {
         val scalars = ArrayList<Scalar>()
-        val links = HashMap<Link, Output>()
-        val multilinks = HashMap<MultiLink, Output>()
+        val links = HashMap<Link, Read>()
+        val multilinks = HashMap<Multilink, Read>()
 
         for ((key, value) in map) {
             val property = table.properties[key]
             when (property) {
                 is Scalar -> if (value !is Boolean || value) scalars += property
-                is Link -> links[property] = parseOutput(property.table, value as Map<String, Any?>)
-                is MultiLink -> multilinks[property] = parseOutput(property.table, value as Map<String, Any?>)
+                is Link -> links[property] = parseRead(property.table, value as Map<String, Any?>)
+                is Multilink -> multilinks[property] = parseRead(property.table, value as Map<String, Any?>)
                 null -> throw IllegalArgumentException("Key '$key' not found in table $table.")
             }
         }
 
-        return Output(scalars, links, multilinks)
+        return Read(scalars, links, multilinks)
     }
 
-    fun parseInput(table: Table, map: Map<String, Any?>): Input {
+    fun parseWrite(table: Table, map: Map<String, Any?>): Write {
         val scalars = HashMap<Scalar, Any?>()
-        val links = HashMap<Link, Input>()
-        val multilinkReplacements = HashMap<MultiLink, List<Input>>()
-        val multilinkAdditions = HashMap<MultiLink, List<Input>>()
-        val multilinkSubtractions = HashMap<MultiLink, List<Input>>()
+        val links = HashMap<Link, Write>()
+        val multilinks = HashMap<Multilink, MultilinkModifications>()
 
         for ((key, value) in map) {
             if (key.startsWith('+')) {
-                val property = table.properties[key.substring(1)] as MultiLink
-                multilinkAdditions[property] = (value as List<Map<String, Any?>>).map { item ->
-                    parseInput(property.table, item)
+                val property = table.properties[key.substring(1)] as Multilink
+                multilinks.getOrPut(property) { MultilinkModifications() }.additions = (value as List<Map<String, Any?>>).map { item ->
+                    parseWrite(property.table, item)
                 }
             } else if (key.startsWith('-')) {
-                val property = table.properties[key.substring(1)] as MultiLink
-                multilinkSubtractions[property] = (value as List<Map<String, Any?>>).map { item ->
-                    parseInput(property.table, item)
+                val property = table.properties[key.substring(1)] as Multilink
+                multilinks.getOrPut(property) { MultilinkModifications() }.removals = (value as List<Map<String, Any?>>).map { item ->
+                    parseWrite(property.table, item)
                 }
             } else {
                 val property = table.properties[key]
@@ -59,34 +58,32 @@ object JSON {
                             is ScalarType.Enum -> type.enum.indexedByName[value as String]!!.value
                         }
                     }
-                    is Link -> links[property] = parseInput(property.table, value as Map<String, Any?>)
-                    is MultiLink -> multilinkReplacements[property] = (value as List<Map<String, Any?>>).map { item ->
-                        parseInput(property.table, item)
+                    is Link -> links[property] = parseWrite(property.table, value as Map<String, Any?>)
+                    is Multilink -> multilinks.getOrPut(property) { MultilinkModifications() }.replacements = (value as List<Map<String, Any?>>).map { item ->
+                        parseWrite(property.table, item)
                     }
                     null -> throw IllegalArgumentException("Key '$key' not found in table $table.")
                 }
             }
         }
-        return Input(map["id"]?.toString(), scalars, links, multilinkReplacements, multilinkAdditions, multilinkSubtractions)
+        return Write(map["id"]?.toString(), scalars, links, multilinks)
     }
 
-    fun parseInput(table: Table, id: String?, map: Map<String, Any?>): Input {
+    fun parseWrite(table: Table, id: String?, map: Map<String, Any?>): Write {
         val scalars = HashMap<Scalar, Any?>()
-        val links = HashMap<Link, Input>()
-        val multilinkReplacements = HashMap<MultiLink, List<Input>>()
-        val multilinkAdditions = HashMap<MultiLink, List<Input>>()
-        val multilinkSubtractions = HashMap<MultiLink, List<Input>>()
+        val links = HashMap<Link, Write>()
+        val multilinks = HashMap<Multilink, MultilinkModifications>()
 
         for ((key, value) in map) {
             if (key.startsWith('+')) {
-                val property = table.properties[key.substring(1)] as MultiLink
-                multilinkAdditions[property] = (value as List<Map<String, Any?>>).map { item ->
-                    parseInput(property.table, item)
+                val property = table.properties[key.substring(1)] as Multilink
+                multilinks.getOrPut(property) { MultilinkModifications() }.additions = (value as List<Map<String, Any?>>).map { item ->
+                    parseWrite(property.table, item)
                 }
             } else if (key.startsWith('-')) {
-                val property = table.properties[key.substring(1)] as MultiLink
-                multilinkSubtractions[property] = (value as List<Map<String, Any?>>).map { item ->
-                    parseInput(property.table, item)
+                val property = table.properties[key.substring(1)] as Multilink
+                multilinks.getOrPut(property) { MultilinkModifications() }.removals = (value as List<Map<String, Any?>>).map { item ->
+                    parseWrite(property.table, item)
                 }
             } else {
                 val property = table.properties[key]
@@ -107,35 +104,34 @@ object JSON {
                             is ScalarType.Enum -> type.enum.indexedByName[value as String]!!.value
                         }
                     }
-                    is Link -> links[property] = parseInput(property.table, value as Map<String, Any?>)
-                    is MultiLink -> multilinkReplacements[property] = (value as List<Map<String, Any?>>).map { item ->
-                        parseInput(property.table, item)
+                    is Link -> links[property] = parseWrite(property.table, value as Map<String, Any?>)
+                    is Multilink -> multilinks.getOrPut(property) { MultilinkModifications() }.replacements = (value as List<Map<String, Any?>>).map { item ->
+                        parseWrite(property.table, item)
                     }
                     null -> throw IllegalArgumentException("Key '$key' not found in table $table.")
                 }
             }
         }
-        return Input(id, scalars, links, multilinkReplacements, multilinkAdditions, multilinkSubtractions)
+        return Write(id, scalars, links, multilinks)
     }
 
     fun serializeInstance(instance: Instance): Map<String, Any?> {
         val result = HashMap<String, Any?>()
         for ((key, value) in instance.scalars) {
             val type = key.type
-            result[key.name] = when (type) {
+            result[key.key] = when (type) {
                 ScalarType.Date -> (value as Date).time
                 is ScalarType.Enum -> type.enum.indexedByValue[value as Byte]!!.name
                 else -> value
             }
         }
         for ((key, value) in instance.links) {
-            result[key.name] = value?.let { serializeInstance(it) }
+            result[key.key] = value?.let { serializeInstance(it) }
         }
         for ((key, values) in instance.multilinks) {
-            result[key.name] = values.map { serializeInstance(it) }
+            result[key.key] = values.map { serializeInstance(it) }
         }
         result["id"] = instance.id
-        result["_type"] = instance.table.tableName
         return result
     }
 
