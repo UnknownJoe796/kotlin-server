@@ -32,9 +32,13 @@ class MemoryTableAccess(val tableAccessFetcher: Fetcher<Table, TableAccess>, ove
             row[scalar] = value
         }
         for ((link, value) in write.links) {
-            val newInstance = tableAccessFetcher[link.table].update(user, value)
-            row[link] = newInstance.id
-            resultLinks[link] = newInstance
+            if (value == null) {
+                row[link] = null
+            } else {
+                val newInstance = tableAccessFetcher[link.table].update(user, value)
+                row[link] = newInstance.id
+                resultLinks[link] = newInstance
+            }
         }
         for ((link, mutation) in write.multilinks) {
             val replacements = mutation.replacements
