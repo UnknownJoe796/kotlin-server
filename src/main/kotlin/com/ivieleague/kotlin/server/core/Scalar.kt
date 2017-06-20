@@ -5,5 +5,6 @@ class Scalar(
         override val description: String,
         override val startVersion: Int = 0,
         override val endVersion: Int = Int.MAX_VALUE,
+        override val readOnly: Boolean = false,
         val type: ScalarType
 ) : Property

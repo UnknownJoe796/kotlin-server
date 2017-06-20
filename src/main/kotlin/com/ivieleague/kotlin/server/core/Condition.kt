@@ -57,4 +57,13 @@ sealed class Condition {
         override fun invoke(instance: Instance): Boolean = instance.scalars[scalar] != doesNotEqual
         override fun invoke(write: Write): Boolean = write.scalars[scalar] != doesNotEqual
     }
+
+    data class ScalarBetween<T : Comparable<T>>(val scalar: Scalar, val lower: T, val upper: T) : Condition() {
+        override fun dependencies(modify: Read) {
+            modify.scalars += scalar
+        }
+
+        override fun invoke(instance: Instance): Boolean = (instance.scalars[scalar] as T) in (lower..upper)
+        override fun invoke(write: Write): Boolean = (write.scalars[scalar] as T) in (lower..upper)
+    }
 }

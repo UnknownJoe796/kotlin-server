@@ -74,6 +74,7 @@ class MemoryTableAccess(val tableAccessFetcher: Fetcher<Table, TableAccess>, ove
             is Condition.AnyCondition -> condition.conditions.any { evaluateCondition(it, row) }
             is Condition.ScalarEqual -> row[condition.scalar] == condition.equals
             is Condition.ScalarNotEqual -> row[condition.scalar] != condition.doesNotEqual
+            is Condition.ScalarBetween<*> -> (row[condition.scalar] as Comparable<Any>) in (condition.lower as Comparable<Any>..condition.upper as Comparable<Any>)
         }
     }
 

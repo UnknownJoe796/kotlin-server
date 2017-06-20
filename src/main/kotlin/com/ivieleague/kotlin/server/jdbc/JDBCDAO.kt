@@ -1,11 +1,29 @@
-//package com.ivieleague.kotlin.server.jdbc
+package com.ivieleague.kotlin.server.jdbc
+
+//class JBDCTableAccess(val connection:Connection, override val table: Table): TableAccess {
 //
-//import com.ivieleague.kotlin.server.*
-//import java.sql.Connection
-//import java.sql.ResultSet
-//import java.sql.Timestamp
-//import java.util.*
+//    init{
+//        connection.c
+//    }
 //
+//    override fun get(user: Instance?, id: String, read: Read): Instance? {
+//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+//    }
+//
+//    override fun query(user: Instance?, condition: Condition, read: Read): List<Instance> {
+//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+//    }
+//
+//    override fun update(user: Instance?, write: Write): Instance {
+//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+//    }
+//
+//    override fun delete(user: Instance?, id: String): Boolean {
+//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+//    }
+//
+//}
+
 //class JDBCDAO(val connection: Connection, val database: String, val schema: Schema) : DAO {
 //
 //    fun ScalarType.mapped(): String = when (this) {
