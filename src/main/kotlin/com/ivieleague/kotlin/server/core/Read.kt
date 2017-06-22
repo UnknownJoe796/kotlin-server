@@ -28,4 +28,6 @@ class Read(
             else existing.merge(read)
         }
     }
+
+    fun isEmpty(): Boolean = scalars.isEmpty() && links.isEmpty() && multilinks.isEmpty()
 }

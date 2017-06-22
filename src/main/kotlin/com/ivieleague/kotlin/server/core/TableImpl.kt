@@ -10,8 +10,9 @@ open class TableImpl(
     override val scalars: ArrayList<Scalar> = ArrayList()
     override val links: ArrayList<Link> = ArrayList()
     override val multilinks: ArrayList<Multilink> = ArrayList()
-    override var readPermission: (user: Instance?) -> Condition = { _ -> Condition.Always }
-    override var writePermission: (user: Instance?) -> Condition = { _ -> Condition.Always }
+    override var readPermission: (user: Instance?) -> Condition = SecurityRules.always
+    override var writeBeforePermission: SecurityRule = SecurityRules.always
+    override var writeAfterPermission: SecurityRule = SecurityRules.always
 
     fun Scalar.register(): Scalar {
         scalars += this

@@ -25,7 +25,7 @@ object JSON {
 
     fun parseWrite(table: Table, map: Map<String, Any?>): Write {
         val scalars = HashMap<Scalar, Any?>()
-        val links = HashMap<Link, Write>()
+        val links = HashMap<Link, Write?>()
         val multilinks = HashMap<Multilink, MultilinkModifications>()
 
         for ((key, value) in map) {
@@ -71,7 +71,7 @@ object JSON {
 
     fun parseWrite(table: Table, id: String?, map: Map<String, Any?>): Write {
         val scalars = HashMap<Scalar, Any?>()
-        val links = HashMap<Link, Write>()
+        val links = HashMap<Link, Write?>()
         val multilinks = HashMap<Multilink, MultilinkModifications>()
 
         for ((key, value) in map) {

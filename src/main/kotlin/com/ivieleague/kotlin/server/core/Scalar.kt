@@ -5,6 +5,8 @@ class Scalar(
         override val description: String,
         override val startVersion: Int = 0,
         override val endVersion: Int = Int.MAX_VALUE,
-        override val readOnly: Boolean = false,
+        override val readPermission: SecurityRule = SecurityRules.always,
+        override val writeBeforePermission: SecurityRule = SecurityRules.always,
+        override val writeAfterPermission: SecurityRule = SecurityRules.always,
         val type: ScalarType
 ) : Property

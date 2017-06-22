@@ -5,5 +5,8 @@ interface Property {
     val description: String
     val startVersion: Int
     val endVersion: Int
-    val readOnly: Boolean
+
+    val readPermission: SecurityRule
+    val writeBeforePermission: SecurityRule
+    val writeAfterPermission: SecurityRule
 }

@@ -40,20 +40,20 @@ package com.ivieleague.kotlin.server.jdbc
 //        is ScalarType.Enum -> "SMALLINT"
 //    }
 //
-//    fun mapToKotlin(scalar: Scalar, result: ResultSet): Any? {
-//        val type = scalar.type
+//    fun mapToKotlin(wraps: Scalar, result: ResultSet): Any? {
+//        val type = wraps.type
 //        return when (type) {
-//            ScalarType.Boolean -> result.getBoolean(scalar.name)
-//            ScalarType.Byte -> result.getByte(scalar.name)
-//            ScalarType.Short -> result.getShort(scalar.name)
-//            ScalarType.Int -> result.getInt(scalar.name)
-//            ScalarType.Long -> result.getLong(scalar.name)
-//            ScalarType.Float -> result.getFloat(scalar.name)
-//            ScalarType.Double -> result.getDouble(scalar.name)
-//            ScalarType.ShortString -> result.getString(scalar.name)
-//            ScalarType.LongString -> result.getString(scalar.name)
-//            ScalarType.Date -> result.getDate(scalar.name)
-//            is ScalarType.Enum -> type.enum[result.getByte(scalar.name)]
+//            ScalarType.Boolean -> result.getBoolean(wraps.name)
+//            ScalarType.Byte -> result.getByte(wraps.name)
+//            ScalarType.Short -> result.getShort(wraps.name)
+//            ScalarType.Int -> result.getInt(wraps.name)
+//            ScalarType.Long -> result.getLong(wraps.name)
+//            ScalarType.Float -> result.getFloat(wraps.name)
+//            ScalarType.Double -> result.getDouble(wraps.name)
+//            ScalarType.ShortString -> result.getString(wraps.name)
+//            ScalarType.LongString -> result.getString(wraps.name)
+//            ScalarType.Date -> result.getDate(wraps.name)
+//            is ScalarType.Enum -> type.enum[result.getByte(wraps.name)]
 //        }
 //    }
 //
