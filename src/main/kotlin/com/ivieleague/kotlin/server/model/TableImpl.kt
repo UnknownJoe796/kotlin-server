@@ -1,4 +1,4 @@
-package com.ivieleague.kotlin.server.core
+package com.ivieleague.kotlin.server.model
 
 /**
  * Created by josep on 6/15/2017.

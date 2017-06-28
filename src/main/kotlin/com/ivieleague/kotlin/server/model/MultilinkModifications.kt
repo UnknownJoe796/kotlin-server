@@ -1,4 +1,4 @@
-package com.ivieleague.kotlin.server.core
+package com.ivieleague.kotlin.server.model
 
 class MultilinkModifications(
         var additions: Collection<Write>? = null,

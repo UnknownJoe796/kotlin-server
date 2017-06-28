@@ -1,6 +1,6 @@
-package com.ivieleague.kotlin.server.core
+package com.ivieleague.kotlin.server.model
 
-class Scalar(
+class Link(
         override val key: String,
         override val description: String,
         override val startVersion: Int = 0,
@@ -8,5 +8,5 @@ class Scalar(
         override val readPermission: SecurityRule = SecurityRules.always,
         override val writeBeforePermission: SecurityRule = SecurityRules.always,
         override val writeAfterPermission: SecurityRule = SecurityRules.always,
-        val type: ScalarType
+        val table: Table
 ) : Property

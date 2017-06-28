@@ -1,10 +1,7 @@
 package com.ivieleague.kotlin.server.xodus
 
-import com.ivieleague.kotlin.server.core.*
-import jetbrains.exodus.entitystore.Entity
-import jetbrains.exodus.entitystore.EntityIterable
-import jetbrains.exodus.entitystore.PersistentEntityStore
-import jetbrains.exodus.entitystore.StoreTransaction
+import com.ivieleague.kotlin.server.model.*
+import jetbrains.exodus.entitystore.*
 
 class XodusAccess(val entityStore: PersistentEntityStore) : Fetcher<Table, XodusTableAccess> {
 
@@ -29,7 +26,11 @@ class XodusTableAccess(
 
     override fun get(user: Instance?, id: String, read: Read): Instance? {
         return xodusAccess.entityStore.beginReadonlyTransaction().use {
-            it.getEntity(it.toEntityId(id)).toInstance(read)
+            try {
+                it.getEntity(it.toEntityId(id)).toInstance(read)
+            } catch(e: EntityRemovedInDatabaseException) {
+                throw IllegalArgumentException("ID not found")
+            }
         }
     }
 
@@ -70,7 +71,11 @@ class XodusTableAccess(
         val multilinkEntities = HashMap<Multilink, List<Instance>>()
 
         val id = write.id
-        val entity = if (id == null) txn.newEntity(table.tableName) else txn.getEntity(txn.toEntityId(id))
+        val entity = if (id == null) txn.newEntity(table.tableName) else try {
+            txn.getEntity(txn.toEntityId(id))
+        } catch(e: EntityRemovedInDatabaseException) {
+            throw IllegalArgumentException("ID not found")
+        }
         for ((scalar, value) in write.scalars) {
             entity.setProperty(scalar.key, value as Comparable<*>)
         }
@@ -119,7 +124,11 @@ class XodusTableAccess(
 
     override fun delete(user: Instance?, id: String): Boolean {
         return xodusAccess.entityStore.beginTransaction().use {
-            it.getEntity(it.toEntityId(id)).delete()
+            try {
+                it.getEntity(it.toEntityId(id)).delete()
+            } catch(e: EntityRemovedInDatabaseException) {
+                throw IllegalArgumentException("ID not found")
+            }
         }
     }
 

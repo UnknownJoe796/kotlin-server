@@ -1,4 +1,4 @@
-package com.ivieleague.kotlin.server.core
+package com.ivieleague.kotlin.server.model
 
 interface Property {
     val key: String

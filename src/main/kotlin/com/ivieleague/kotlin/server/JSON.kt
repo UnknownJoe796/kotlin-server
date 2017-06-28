@@ -1,6 +1,6 @@
 package com.ivieleague.kotlin.server
 
-import com.ivieleague.kotlin.server.core.*
+import com.ivieleague.kotlin.server.model.*
 import java.util.*
 
 

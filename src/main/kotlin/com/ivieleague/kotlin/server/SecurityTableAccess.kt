@@ -1,6 +1,6 @@
 package com.ivieleague.kotlin.server
 
-import com.ivieleague.kotlin.server.core.*
+import com.ivieleague.kotlin.server.model.*
 import java.util.*
 
 class SecurityDatabaseAccess(val wraps: Fetcher<Table, TableAccess>) : Fetcher<Table, TableAccess> {
@@ -27,17 +27,17 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
     fun Instance.securePropertiesPreWrite(user: Instance?) {
         for ((property, _) in scalars) {
             if (!property.writeBeforePermission.invoke(user).invoke(this)) {
-                throw IllegalArgumentException("You can't write this value to this property.")
+                throw exceptionForbidden("You can't write this value to this property.")
             }
         }
         for ((property, _) in links) {
             if (!property.writeBeforePermission.invoke(user).invoke(this)) {
-                throw IllegalArgumentException("You can't write this value to this property.")
+                throw exceptionForbidden("You can't write this value to this property.")
             }
         }
         for ((property, _) in multilinks) {
             if (!property.writeBeforePermission.invoke(user).invoke(this)) {
-                throw IllegalArgumentException("You can't write this value to this property.")
+                throw exceptionForbidden("You can't write this value to this property.")
             }
         }
     }
@@ -45,17 +45,17 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
     fun Write.secureProperties(user: Instance?): Write {
         for ((property, _) in scalars) {
             if (!property.writeAfterPermission.invoke(user).invoke(this)) {
-                throw IllegalArgumentException("You can't write this value to this property.")
+                throw exceptionForbidden("You can't write this value to this property.")
             }
         }
         for ((property, _) in links) {
             if (!property.writeAfterPermission.invoke(user).invoke(this)) {
-                throw IllegalArgumentException("You can't write this value to this property.")
+                throw exceptionForbidden("You can't write this value to this property.")
             }
         }
         for ((property, _) in multilinks) {
             if (!property.writeAfterPermission.invoke(user).invoke(this)) {
-                throw IllegalArgumentException("You can't write this value to this property.")
+                throw exceptionForbidden("You can't write this value to this property.")
             }
         }
 
@@ -82,7 +82,7 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
         if (readCondition.invoke(result))
             return result.secureProperties(user)
         else
-            throw IllegalAccessException("You can't read this because you don't have permission to access this row")
+            throw exceptionForbidden("You can't read this because you don't have permission to access this row")
     }
 
     override fun query(user: Instance?, condition: Condition, read: Read): Collection<Instance> {
@@ -100,7 +100,7 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
         val writeAfterCondition = table.writeAfterPermission(user)
         if (writeAfterCondition != Condition.Always) {
             if (!writeAfterCondition.invoke(write))
-                throw IllegalAccessException("You can't write this because the data you are attempting to write is restricted")
+                throw exceptionForbidden("You can't write this because the data you are attempting to write is restricted")
         }
         val read = write.prewriteQuery(user)
         if (write.id != null) {
@@ -110,7 +110,7 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
 
             if (existing != null) {
                 if (!writeBeforeCondition.invoke(existing))
-                    throw IllegalAccessException("You can't write this because you don't have permission to modify this row")
+                    throw exceptionForbidden("You can't write this because you don't have permission to modify this row")
                 existing.securePropertiesPreWrite(user)
             }
         }
@@ -125,7 +125,7 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
             val existing = get(user, id, read)
             if (existing != null)
                 if (!writeBeforeCondition.invoke(existing))
-                    throw IllegalAccessException("You can't delete this because you don't have permission to modify this row")
+                    throw exceptionForbidden("You can't delete this because you don't have permission to modify this row")
         }
         return wraps.delete(user, id)
     }

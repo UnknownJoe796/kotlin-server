@@ -1,4 +1,4 @@
-package com.ivieleague.kotlin.server.core
+package com.ivieleague.kotlin.server.model
 
 class Read(
         scalars: Collection<Scalar> = listOf(),
