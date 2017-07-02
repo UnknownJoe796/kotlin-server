@@ -19,13 +19,13 @@ class MemoryTableAccess(val tableAccessFetcher: Fetcher<Table, TableAccess>, ove
     }
 
     override fun query(user: Instance?, condition: Condition, read: Read): List<Instance> {
-        val rows = data.entries.filter { evaluateCondition(condition, it.value) }
+        val rows = data.entries.filter { evaluateCondition(condition, it.key, it.value) }
         return rows.map { instanceFromRow(user, it.key, read, it.value) }
     }
 
     override fun update(user: Instance?, write: Write): Instance {
-        val resultLinks = HashMap<Link, Instance>()
-        val resultMultilinks = HashMap<Multilink, List<Instance>>()
+        val resultLinks = HashMap<Link, Instance?>()
+        val resultMultilinks = HashMap<Multilink, Collection<Instance>>()
         val id = write.id ?: UUID.randomUUID().toString()
         val row = data.getOrPut(id) { HashMap() }
         for ((scalar, value) in write.scalars) {
@@ -61,19 +61,20 @@ class MemoryTableAccess(val tableAccessFetcher: Fetcher<Table, TableAccess>, ove
                 resultMultilinks[link] = new
             }
         }
-        return Instance(id, mapOf(), resultLinks, resultMultilinks)
+        return Instance(id, mutableMapOf(), resultLinks, resultMultilinks)
     }
 
     override fun delete(user: Instance?, id: String): Boolean = data.remove(id) != null
 
-    private fun evaluateCondition(condition: Condition, row: HashMap<Property, Any?>): Boolean {
+    private fun evaluateCondition(condition: Condition, key: String, row: HashMap<Property, Any?>): Boolean {
         return when (condition) {
             Condition.Always -> true
             Condition.Never -> false
-            is Condition.AllCondition -> condition.conditions.all { evaluateCondition(it, row) }
-            is Condition.AnyCondition -> condition.conditions.any { evaluateCondition(it, row) }
+            is Condition.AllCondition -> condition.conditions.all { evaluateCondition(it, key, row) }
+            is Condition.AnyCondition -> condition.conditions.any { evaluateCondition(it, key, row) }
             is Condition.ScalarEqual -> row[condition.scalar] == condition.equals
             is Condition.ScalarNotEqual -> row[condition.scalar] != condition.doesNotEqual
+            is Condition.IdEquals -> key == condition.equals
             is Condition.ScalarBetween<*> -> (row[condition.scalar] as Comparable<Any>) in (condition.lower as Comparable<Any>..condition.upper as Comparable<Any>)
         }
     }
@@ -81,19 +82,19 @@ class MemoryTableAccess(val tableAccessFetcher: Fetcher<Table, TableAccess>, ove
     private fun instanceFromRow(user: Instance?, id: String, output: Read, row: HashMap<Property, Any?>): Instance {
         return Instance(
                 id = id,
-                scalars = output.scalars.associate { it to row[it] },
+                scalars = output.scalars.associate { it to row[it] }.toMutableMap(),
                 links = output.links.entries.associate {
                     val result = (row[it.key] as? String)?.let { otherId ->
                         tableAccessFetcher[it.key.table].get(user, otherId, it.value)
                     }
                     it.key to result
-                },
+                }.toMutableMap(),
                 multilinks = output.multilinks.entries.associate {
                     val result = (row[it.key] as? List<String>?)?.mapNotNull { otherId ->
                         tableAccessFetcher[it.key.table].get(user, otherId, it.value)
                     } ?: listOf()
                     it.key to result
-                }
+                }.toMutableMap()
         )
     }
 }

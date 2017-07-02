@@ -23,7 +23,7 @@ class UserTableAccess(val wraps: TableAccess, val tokenInformation: TokenInforma
     override val table: Table = object : Table {
         override val tableName: String = wraps.table.tableName
         override val tableDescription: String = wraps.table.tableDescription
-        override val scalars: Collection<Scalar> = wraps.table.scalars + password - wrapsTable.hash
+        override val scalars: Collection<Scalar> = wraps.table.scalars + password + token - wrapsTable.hash
         override val links: Collection<Link> = wraps.table.links
         override val multilinks: Collection<Multilink> = wraps.table.multilinks
         override val readPermission: SecurityRule = wraps.table.readPermission
@@ -60,7 +60,7 @@ class UserTableAccess(val wraps: TableAccess, val tokenInformation: TokenInforma
 
     override fun delete(user: Instance?, id: String): Boolean = wraps.delete(user, id)
 
-    fun login(usernameScalar: Scalar, username: String, password: String, read: Read): Instance {
+    fun login(usernameScalar: Scalar, username: String, password: String, read: Read = table.defaultRead()): Instance {
         val isReadingToken = read.scalars.remove(token)
         read.scalars += wrapsTable.hash
         val instance = wraps.query(null, condition = Condition.ScalarEqual(usernameScalar, username), read = read)

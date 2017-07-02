@@ -16,9 +16,9 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
         get() = wraps.table
 
     fun Instance.secureProperties(user: Instance?) {
-        scalars.keys.removeAll { it.readPermission.invoke(user).invoke(this) }
-        links.keys.removeAll { it.readPermission.invoke(user).invoke(this) }
-        multilinks.keys.removeAll { it.readPermission.invoke(user).invoke(this) }
+        scalars.keys.removeAll { !it.readPermission.invoke(user).invoke(this) }
+        links.keys.removeAll { !it.readPermission.invoke(user).invoke(this) }
+        multilinks.keys.removeAll { !it.readPermission.invoke(user).invoke(this) }
     }
 
     fun Instance.securePropertiesPreWrite(user: Instance?) {

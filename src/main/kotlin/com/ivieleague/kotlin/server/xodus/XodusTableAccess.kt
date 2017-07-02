@@ -18,9 +18,9 @@ class XodusTableAccess(
     private fun Entity.toInstance(read: Read): Instance? {
         return Instance(
                 id = id.toString(),
-                scalars = read.scalars.associate { it to getProperty(it.key) },
-                links = read.links.entries.associate { it.key to getLink(it.key.key)?.toInstance(it.value) },
-                multilinks = read.multilinks.entries.associate { it.key to getLinks(it.key.key).mapNotNull { e -> e.toInstance(it.value) } }
+                scalars = read.scalars.associate { it to getProperty(it.key) }.toMutableMap(),
+                links = read.links.entries.associate { it.key to getLink(it.key.key)?.toInstance(it.value) }.toMutableMap(),
+                multilinks = read.multilinks.entries.associate { it.key to getLinks(it.key.key).mapNotNull { e -> e.toInstance(it.value) } }.toMutableMap()
         )
     }
 
@@ -69,7 +69,7 @@ class XodusTableAccess(
     private fun privateWrite(write: Write, txn: StoreTransaction): Pair<Entity, Instance> {
 
         val linkEntities = HashMap<Link, Instance?>()
-        val multilinkEntities = HashMap<Multilink, List<Instance>>()
+        val multilinkEntities = HashMap<Multilink, Collection<Instance>>()
 
         val id = write.id
         val entity = if (id == null) txn.newEntity(table.tableName) else try {
@@ -120,7 +120,7 @@ class XodusTableAccess(
             }
         }
 
-        return entity to Instance(entity.id.toString(), mapOf(), linkEntities, multilinkEntities)
+        return entity to Instance(entity.id.toString(), mutableMapOf(), linkEntities, multilinkEntities)
     }
 
     override fun delete(user: Instance?, id: String): Boolean {

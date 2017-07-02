@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.ivieleague.kotlin.server.model.Condition
 import com.ivieleague.kotlin.server.model.Instance
 import com.ivieleague.kotlin.server.model.TableAccess
-import com.ivieleague.kotlin.server.model.defaultRead
+import com.ivieleague.kotlin.server.model.properties
 import com.lightningkite.kotlin.networking.gsonToString
 import org.jetbrains.ktor.application.ApplicationCall
 import org.jetbrains.ktor.application.call
@@ -15,18 +15,19 @@ import org.jetbrains.ktor.routing.*
 
 val json = ObjectMapper()
 
-fun Route.restPlus(tableAccesses: Collection<TableAccess>, userGetter: (ApplicationCall) -> Instance? = { null }) {
+fun Route.restNest(tableAccesses: Collection<TableAccess>, userGetter: (ApplicationCall) -> Instance? = { null }) {
     for (table in tableAccesses) {
         route(table.table.tableName) {
-            restPlus(table, userGetter)
+            restNest(table, userGetter)
         }
     }
 }
 
-fun Route.restPlus(tableAccess: TableAccess, userGetter: (ApplicationCall) -> Instance? = { null }) {
+fun Route.restNest(tableAccess: TableAccess, userGetter: (ApplicationCall) -> Instance? = { null }) {
     options("") {
         exceptionWrap {
-            it.respondText(tableAccess.table.gsonToString())
+            val output = tableAccess.table.properties
+            it.respondText(output.gsonToString())
         }
     }
     get("") {

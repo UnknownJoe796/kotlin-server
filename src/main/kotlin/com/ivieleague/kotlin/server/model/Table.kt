@@ -11,6 +11,8 @@ interface Table {
     val readPermission: SecurityRule
     val writeBeforePermission: SecurityRule
     val writeAfterPermission: SecurityRule
+
+    fun defaultRead() = Read(scalars, links.associate { it to Read.EMPTY }, multilinks.associate { it to Read.EMPTY })
 }
 
 /*

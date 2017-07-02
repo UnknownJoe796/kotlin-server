@@ -14,5 +14,3 @@ val Table.properties: Map<String, Property>
                 it[multilink.key] = multilink
         }
     }
-
-fun Table.defaultRead() = Read(scalars, links.associate { it to Read.EMPTY }, multilinks.associate { it to Read.EMPTY })
