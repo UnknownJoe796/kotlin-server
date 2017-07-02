@@ -51,6 +51,8 @@ dependencies {
     compile 'org.jetbrains.xodus:xodus-entity-store:1.0.5'
 
     compile group: 'org.mindrot', name: 'jbcrypt', version: '0.3m'
+    compile 'com.auth0:java-jwt:3.2.0'
+
 
 //    compile group: 'org.postgresql', name: 'postgresql', version: '42.1.1'
 //    compile 'com.esotericsoftware:reflectasm:1.11.3'

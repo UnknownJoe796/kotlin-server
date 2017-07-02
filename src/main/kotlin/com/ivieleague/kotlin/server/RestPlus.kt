@@ -15,6 +15,14 @@ import org.jetbrains.ktor.routing.*
 
 val json = ObjectMapper()
 
+fun Route.restPlus(tableAccesses: Collection<TableAccess>, userGetter: (ApplicationCall) -> Instance? = { null }) {
+    for (table in tableAccesses) {
+        route(table.table.tableName) {
+            restPlus(table, userGetter)
+        }
+    }
+}
+
 fun Route.restPlus(tableAccess: TableAccess, userGetter: (ApplicationCall) -> Instance? = { null }) {
     options("") {
         exceptionWrap {

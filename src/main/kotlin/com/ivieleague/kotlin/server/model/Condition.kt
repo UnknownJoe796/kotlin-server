@@ -66,4 +66,10 @@ sealed class Condition {
         override fun invoke(instance: Instance): Boolean = (instance.scalars[scalar] as T) in (lower..upper)
         override fun invoke(write: Write): Boolean = (write.scalars[scalar] as T) in (lower..upper)
     }
+
+    data class IdEquals(val equals: String) : Condition() {
+        override fun dependencies(modify: Read) {}
+        override fun invoke(instance: Instance): Boolean = instance.id == equals
+        override fun invoke(write: Write): Boolean = write.id == equals
+    }
 }

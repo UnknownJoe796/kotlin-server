@@ -15,13 +15,10 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
     override val table: Table
         get() = wraps.table
 
-    fun Instance.secureProperties(user: Instance?): Instance {
-        return Instance(
-                id = id,
-                scalars = scalars.filter { it.key.readPermission.invoke(user).invoke(this) },
-                links = links.filter { it.key.readPermission.invoke(user).invoke(this) },
-                multilinks = multilinks.filter { it.key.readPermission.invoke(user).invoke(this) }
-        )
+    fun Instance.secureProperties(user: Instance?) {
+        scalars.keys.removeAll { it.readPermission.invoke(user).invoke(this) }
+        links.keys.removeAll { it.readPermission.invoke(user).invoke(this) }
+        multilinks.keys.removeAll { it.readPermission.invoke(user).invoke(this) }
     }
 
     fun Instance.securePropertiesPreWrite(user: Instance?) {
@@ -80,7 +77,7 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
         readCondition.dependencies(read)
         val result = wraps.get(user, id, read) ?: return null
         if (readCondition.invoke(result))
-            return result.secureProperties(user)
+            return result.apply { secureProperties(user) }
         else
             throw exceptionForbidden("You can't read this because you don't have permission to access this row")
     }
@@ -92,7 +89,11 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
                 user = user,
                 condition = Condition.AllCondition(listOf(condition, readCondition)),
                 read = read
-        ).map { it.secureProperties(user) }
+        ).also {
+            for (item in it) {
+                item.secureProperties(user)
+            }
+        }
     }
 
     override fun update(user: Instance?, write: Write): Instance {

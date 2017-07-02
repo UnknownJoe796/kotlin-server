@@ -51,6 +51,7 @@ class XodusTableAccess(
         is Condition.ScalarEqual -> transaction.find(table.tableName, this.scalar.key, this.equals as Comparable<*>)
         is Condition.ScalarNotEqual -> transaction.getAll(table.tableName).minus(transaction.find(table.tableName, this.scalar.key, this.doesNotEqual as Comparable<*>))
         is Condition.ScalarBetween<*> -> transaction.find(table.tableName, this.scalar.key, this.lower, this.upper)
+        is Condition.IdEquals -> TODO()
     }
 
     override fun query(user: Instance?, condition: Condition, read: Read): List<Instance> {
