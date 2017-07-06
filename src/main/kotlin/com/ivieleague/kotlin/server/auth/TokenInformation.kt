@@ -37,6 +37,6 @@ data class TokenInformation(
         } catch(e: JWTVerificationException) {
             throw exceptionBadRequest("The token could not be parsed properly")
         }
-        return tableAccess.get(Instance(id), id, read) ?: throw exceptionBadRequest("Token indicates a user that does not exist")
+        return tableAccess.get(Instance(tableAccess.table, id), id, read) ?: throw exceptionBadRequest("Token indicates a user that does not exist")
     }
 }

@@ -25,6 +25,7 @@ class MappedTable(val wraps: TableAccess) : TableAccess, Table {
 
     private fun innerInstanceToOuter(user: Instance?, row: Instance, myRead: Read): Instance {
         return Instance(
+                table,
                 row.id,
                 myRead.scalars.associate { it to scalarMappers[it]!!.doRead(user, row) }.toMutableMap(),
                 myRead.links.entries.associate { it.key to linkMappers[it.key]!!.doRead(user, row) }.toMutableMap(),

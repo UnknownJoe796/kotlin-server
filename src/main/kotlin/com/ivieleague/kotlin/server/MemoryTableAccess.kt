@@ -61,7 +61,7 @@ class MemoryTableAccess(val tableAccessFetcher: Fetcher<Table, TableAccess>, ove
                 resultMultilinks[link] = new
             }
         }
-        return Instance(id, mutableMapOf(), resultLinks, resultMultilinks)
+        return Instance(table, id, mutableMapOf(), resultLinks, resultMultilinks)
     }
 
     override fun delete(user: Instance?, id: String): Boolean = data.remove(id) != null
@@ -70,17 +70,20 @@ class MemoryTableAccess(val tableAccessFetcher: Fetcher<Table, TableAccess>, ove
         return when (condition) {
             Condition.Always -> true
             Condition.Never -> false
-            is Condition.AllCondition -> condition.conditions.all { evaluateCondition(it, key, row) }
-            is Condition.AnyCondition -> condition.conditions.any { evaluateCondition(it, key, row) }
-            is Condition.ScalarEqual -> row[condition.scalar] == condition.equals
-            is Condition.ScalarNotEqual -> row[condition.scalar] != condition.doesNotEqual
-            is Condition.IdEquals -> key == condition.equals
-            is Condition.ScalarBetween<*> -> (row[condition.scalar] as Comparable<Any>) in (condition.lower as Comparable<Any>..condition.upper as Comparable<Any>)
+            is Condition.AllConditions -> condition.conditions.all { evaluateCondition(it, key, row) }
+            is Condition.AnyConditions -> condition.conditions.any { evaluateCondition(it, key, row) }
+            is Condition.ScalarEqual -> TODO() //row[condition.scalar] == condition.equals
+            is Condition.ScalarNotEqual -> TODO() //row[condition.scalar] != condition.doesNotEqual
+            is Condition.IdEquals -> TODO() //key == condition.equals
+            is Condition.ScalarBetween<*> -> TODO() //(row[condition.scalar] as Comparable<Any>) in (condition.lower as Comparable<Any>..condition.upper as Comparable<Any>)
+            is Condition.MultilinkContains -> TODO()
+            is Condition.MultilinkDoesNotContain -> TODO()
         }
     }
 
     private fun instanceFromRow(user: Instance?, id: String, output: Read, row: HashMap<Property, Any?>): Instance {
         return Instance(
+                table = table,
                 id = id,
                 scalars = output.scalars.associate { it to row[it] }.toMutableMap(),
                 links = output.links.entries.associate {

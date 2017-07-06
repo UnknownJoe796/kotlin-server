@@ -11,13 +11,13 @@ class UserTableAccess(val wraps: TableAccess, val tokenInformation: TokenInforma
             description = "The password of this user",
             type = ScalarType.ShortString,
             readPermission = SecurityRules.never,
-            writeBeforePermission = { user -> user?.id?.let { Condition.IdEquals(it) } ?: Condition.Never }
+            writeBeforePermission = { user -> user?.id?.let { Condition.IdEquals(equals = it) } ?: Condition.Never }
     )
     val token = Scalar(
             key = "token",
             description = "A token generated for this user",
             type = ScalarType.ShortString,
-            readPermission = { user -> user?.id?.let { Condition.IdEquals(it) } ?: Condition.Never },
+            readPermission = { user -> user?.id?.let { Condition.IdEquals(equals = it) } ?: Condition.Never },
             writeBeforePermission = SecurityRules.never
     )
     override val table: Table = object : Table {
@@ -63,7 +63,7 @@ class UserTableAccess(val wraps: TableAccess, val tokenInformation: TokenInforma
     fun login(usernameScalar: Scalar, username: String, password: String, read: Read = table.defaultRead()): Instance {
         val isReadingToken = read.scalars.remove(token)
         read.scalars += wrapsTable.hash
-        val instance = wraps.query(null, condition = Condition.ScalarEqual(usernameScalar, username), read = read)
+        val instance = wraps.query(null, condition = Condition.ScalarEqual(scalar = usernameScalar, equals = username), read = read)
                 .firstOrNull() ?: throw exceptionNotFound("Username and password combination not found")
         val hash = instance.scalars.remove(wrapsTable.hash).toString()
         val passes = BCrypt.checkpw(password, hash)

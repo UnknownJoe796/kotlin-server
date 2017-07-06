@@ -87,7 +87,7 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
         readCondition.dependencies(read)
         return wraps.query(
                 user = user,
-                condition = Condition.AllCondition(listOf(condition, readCondition)),
+                condition = Condition.AllConditions(listOf(condition, readCondition)),
                 read = read
         ).also {
             for (item in it) {
@@ -107,7 +107,7 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
         if (write.id != null) {
             val existing = if (!read.isEmpty()) {
                 get(user, write.id!!, read)
-            } else Instance(write.id!!)
+            } else Instance(table, write.id!!)
 
             if (existing != null) {
                 if (!writeBeforeCondition.invoke(existing))
