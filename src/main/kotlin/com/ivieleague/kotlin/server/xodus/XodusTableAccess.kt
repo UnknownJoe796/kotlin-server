@@ -81,12 +81,12 @@ class XodusTableAccess(
         }
 
         is Condition.ScalarEqual -> if (this.path.isEmpty())
-            EntityIterablePlus(transaction.find(table.tableName, this.scalar.key, this.equals as Comparable<*>))
+            EntityIterablePlus(transaction.find(table.tableName, this.scalar.key, this.value as Comparable<*>))
         else
             defaultIterable(transaction)
 
         is Condition.ScalarNotEqual -> if (this.path.isEmpty())
-            EntityIterablePlus(transaction.getAll(table.tableName).minus(transaction.find(table.tableName, this.scalar.key, this.doesNotEqual as Comparable<*>)))
+            EntityIterablePlus(transaction.getAll(table.tableName).minus(transaction.find(table.tableName, this.scalar.key, this.value as Comparable<*>)))
         else
             defaultIterable(transaction)
 

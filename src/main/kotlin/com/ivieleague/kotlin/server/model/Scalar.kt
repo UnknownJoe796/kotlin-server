@@ -6,7 +6,7 @@ class Scalar(
         override val startVersion: Int = 0,
         override val endVersion: Int = Int.MAX_VALUE,
         override val readPermission: SecurityRule = SecurityRules.always,
-        override val writeBeforePermission: SecurityRule = SecurityRules.always,
-        override val writeAfterPermission: SecurityRule = SecurityRules.always,
+        override val editPermission: SecurityRule = SecurityRules.always,
+        override val writePermission: SecurityRule = SecurityRules.always,
         val type: ScalarType
 ) : Property

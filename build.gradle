@@ -62,5 +62,7 @@ dependencies {
     compile project(path: ':kotlin-observable')
 
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.0.1'
+    compile 'de.undercouch:bson4jackson:2.7.0'
+    compile 'org.msgpack:jackson-dataformat-msgpack:0.7.1'
 
 }

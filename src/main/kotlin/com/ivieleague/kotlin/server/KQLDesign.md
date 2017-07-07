@@ -28,7 +28,7 @@
 ```json
 {
   "condition": {
-    "type": AllConditions,
+    "type": "all",
     "conditions": [
       {"type": "Equal", "value":"title", "equals":"My Note Title" },
       {"type": "NotEqual", "value":"content", "doesNotEqual": ""}

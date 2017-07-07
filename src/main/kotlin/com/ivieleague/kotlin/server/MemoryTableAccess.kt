@@ -72,9 +72,9 @@ class MemoryTableAccess(val tableAccessFetcher: Fetcher<Table, TableAccess>, ove
             Condition.Never -> false
             is Condition.AllConditions -> condition.conditions.all { evaluateCondition(it, key, row) }
             is Condition.AnyConditions -> condition.conditions.any { evaluateCondition(it, key, row) }
-            is Condition.ScalarEqual -> TODO() //row[condition.scalar] == condition.equals
-            is Condition.ScalarNotEqual -> TODO() //row[condition.scalar] != condition.doesNotEqual
-            is Condition.IdEquals -> TODO() //key == condition.equals
+            is Condition.ScalarEqual -> TODO() //row[condition.scalar] == condition.value
+            is Condition.ScalarNotEqual -> TODO() //row[condition.scalar] != condition.value
+            is Condition.IdEquals -> TODO() //key == condition.value
             is Condition.ScalarBetween<*> -> TODO() //(row[condition.scalar] as Comparable<Any>) in (condition.lower as Comparable<Any>..condition.upper as Comparable<Any>)
             is Condition.MultilinkContains -> TODO()
             is Condition.MultilinkDoesNotContain -> TODO()

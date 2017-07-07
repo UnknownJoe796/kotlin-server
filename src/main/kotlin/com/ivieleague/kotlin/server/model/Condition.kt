@@ -43,16 +43,16 @@ sealed class Condition {
     }
 
 
-    data class ScalarEqual(val path: List<Link> = listOf(), val scalar: Scalar, val equals: Any?) : Condition() {
+    data class ScalarEqual(val path: List<Link> = listOf(), val scalar: Scalar, val value: Any?) : Condition() {
         override fun dependencies(modify: Read) = getScalarDependencies(path, scalar, modify)
-        override fun invoke(instance: Instance): Boolean = get(path, instance)?.scalars?.get(scalar) == equals
-        override fun invoke(write: Write): Boolean = get(path, write)?.scalars?.get(scalar) == equals
+        override fun invoke(instance: Instance): Boolean = get(path, instance)?.scalars?.get(scalar) == value
+        override fun invoke(write: Write): Boolean = get(path, write)?.scalars?.get(scalar) == value
     }
 
-    data class ScalarNotEqual(val path: List<Link> = listOf(), val scalar: Scalar, val doesNotEqual: Any?) : Condition() {
+    data class ScalarNotEqual(val path: List<Link> = listOf(), val scalar: Scalar, val value: Any?) : Condition() {
         override fun dependencies(modify: Read) = getScalarDependencies(path, scalar, modify)
-        override fun invoke(instance: Instance): Boolean = get(path, instance)?.scalars?.get(scalar) != doesNotEqual
-        override fun invoke(write: Write): Boolean = get(path, write)?.scalars?.get(scalar) != doesNotEqual
+        override fun invoke(instance: Instance): Boolean = get(path, instance)?.scalars?.get(scalar) != value
+        override fun invoke(write: Write): Boolean = get(path, write)?.scalars?.get(scalar) != value
     }
 
     data class ScalarBetween<T : Comparable<T>>(val path: List<Link> = listOf(), val scalar: Scalar, val lower: T, val upper: T) : Condition() {
@@ -62,7 +62,7 @@ sealed class Condition {
     }
 
 
-    data class IdEquals(val path: List<Link> = listOf(), val equals: String) : Condition() {
+    data class IdEquals(val path: List<Link> = listOf(), val id: String) : Condition() {
         override fun dependencies(modify: Read) {
             var current = modify
             for (link in path) {
@@ -70,8 +70,8 @@ sealed class Condition {
             }
         }
 
-        override fun invoke(instance: Instance): Boolean = get(path, instance)?.id == equals
-        override fun invoke(write: Write): Boolean = get(path, write)?.id == equals
+        override fun invoke(instance: Instance): Boolean = get(path, instance)?.id == id
+        override fun invoke(write: Write): Boolean = get(path, write)?.id == id
     }
 
     data class MultilinkContains(val path: List<Link> = listOf(), val multilink: Multilink, val id: String) : Condition() {

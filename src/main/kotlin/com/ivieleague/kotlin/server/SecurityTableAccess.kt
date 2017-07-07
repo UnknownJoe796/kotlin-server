@@ -23,17 +23,17 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
 
     fun Instance.securePropertiesPreWrite(user: Instance?) {
         for ((property, _) in scalars) {
-            if (!property.writeBeforePermission.invoke(user).invoke(this)) {
+            if (!property.editPermission.invoke(user).invoke(this)) {
                 throw exceptionForbidden("You can't write this value to this property.")
             }
         }
         for ((property, _) in links) {
-            if (!property.writeBeforePermission.invoke(user).invoke(this)) {
+            if (!property.editPermission.invoke(user).invoke(this)) {
                 throw exceptionForbidden("You can't write this value to this property.")
             }
         }
         for ((property, _) in multilinks) {
-            if (!property.writeBeforePermission.invoke(user).invoke(this)) {
+            if (!property.editPermission.invoke(user).invoke(this)) {
                 throw exceptionForbidden("You can't write this value to this property.")
             }
         }
@@ -41,17 +41,17 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
 
     fun Write.secureProperties(user: Instance?): Write {
         for ((property, _) in scalars) {
-            if (!property.writeAfterPermission.invoke(user).invoke(this)) {
+            if (!property.writePermission.invoke(user).invoke(this)) {
                 throw exceptionForbidden("You can't write this value to this property.")
             }
         }
         for ((property, _) in links) {
-            if (!property.writeAfterPermission.invoke(user).invoke(this)) {
+            if (!property.writePermission.invoke(user).invoke(this)) {
                 throw exceptionForbidden("You can't write this value to this property.")
             }
         }
         for ((property, _) in multilinks) {
-            if (!property.writeAfterPermission.invoke(user).invoke(this)) {
+            if (!property.writePermission.invoke(user).invoke(this)) {
                 throw exceptionForbidden("You can't write this value to this property.")
             }
         }
@@ -62,13 +62,13 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
     fun Write.prewriteQuery(user: Instance?) = Read().also {
         table.writeBeforePermission.invoke(user).dependencies(it)
         for ((property, _) in scalars) {
-            property.writeAfterPermission.invoke(user).dependencies(it)
+            property.writePermission.invoke(user).dependencies(it)
         }
         for ((property, _) in links) {
-            property.writeAfterPermission.invoke(user).dependencies(it)
+            property.writePermission.invoke(user).dependencies(it)
         }
         for ((property, _) in multilinks) {
-            property.writeAfterPermission.invoke(user).dependencies(it)
+            property.writePermission.invoke(user).dependencies(it)
         }
     }
 

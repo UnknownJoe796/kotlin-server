@@ -2,23 +2,24 @@ package com.ivieleague.kotlin.server
 
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.core.Version
 import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.ivieleague.kotlin.server.model.*
 import java.io.StringWriter
 import java.math.BigDecimal
 import java.util.*
 
-val jsonFactory = JsonFactory()
-val JsonObjectMapper = ObjectMapper()
-
-class InstanceSerializer() : StdSerializer<Instance>(Instance::class.java) {
-    override fun serialize(value: Instance?, gen: JsonGenerator, provider: SerializerProvider) {
-        if (value != null) gen.writeInstance(value)
-        else gen.writeNull()
+object KotlinServerModelsModule : SimpleModule("KotlinServerModelsModule", Version(1, 0, 0, "", "com.ivieleague", "kotlin-server")) {
+    init {
+        addSerializer(object : StdSerializer<Instance>(Instance::class.java) {
+            override fun serialize(value: Instance?, gen: JsonGenerator, provider: SerializerProvider) {
+                if (value != null) gen.writeInstance(value)
+                else gen.writeNull()
+            }
+        })
     }
-
 }
 
 fun JsonGenerator.writeInstance(instance: Instance) {
@@ -54,12 +55,73 @@ fun JsonGenerator.writeInstance(instance: Instance) {
 }
 
 
+fun Table.toInfoMap(user: Instance?): Map<String, Any?> = HashMap<String, Any?>().also {
+    it["table_name"] = tableName
+    it["table_description"] = tableDescription
+    for (property in scalars) {
+        it[property.key] = property.toInfoMap(user)
+    }
+    for (property in links) {
+        it[property.key] = property.toInfoMap(user)
+    }
+    for (property in multilinks) {
+        it[property.key] = property.toInfoMap(user)
+    }
+}
+
+fun Scalar.toInfoMap(user: Instance?): Map<String, Any?> = mapOf(
+        "key" to key,
+        "description" to description,
+        "start_version" to startVersion,
+        "end_version" to endVersion,
+        "read_permission" to readPermission.invoke(user).toInfoMap(),
+        "edit_permission" to editPermission.invoke(user).toInfoMap(),
+        "write_permission" to writePermission.invoke(user).toInfoMap(),
+        "type" to this.type.toString()
+)
+
+fun Link.toInfoMap(user: Instance?): Map<String, Any?> = mapOf(
+        "key" to key,
+        "description" to description,
+        "start_version" to startVersion,
+        "end_version" to endVersion,
+        "read_permission" to readPermission.invoke(user).toInfoMap(),
+        "edit_permission" to editPermission.invoke(user).toInfoMap(),
+        "write_permission" to writePermission.invoke(user).toInfoMap(),
+        "type" to this.table.tableName
+)
+
+fun Multilink.toInfoMap(user: Instance?): Map<String, Any?> = mapOf(
+        "key" to key,
+        "description" to description,
+        "start_version" to startVersion,
+        "end_version" to endVersion,
+        "read_permission" to readPermission.invoke(user).toInfoMap(),
+        "edit_permission" to editPermission.invoke(user).toInfoMap(),
+        "write_permission" to writePermission.invoke(user).toInfoMap(),
+        "type" to this.table.tableName
+)
+
+fun Condition.toInfoMap(): Map<String, Any?> = when (this) {
+    Condition.Always -> mapOf("type" to "always")
+    Condition.Never -> mapOf("type" to "never")
+    is Condition.AllConditions -> mapOf("type" to "all", "conditions" to conditions.map { it.toInfoMap() })
+    is Condition.AnyConditions -> mapOf("type" to "any", "conditions" to conditions.map { it.toInfoMap() })
+    is Condition.ScalarEqual -> mapOf("type" to "scalarEqual", "path" to path.map { it.key }, "scalar" to scalar.key, "value" to value)
+    is Condition.ScalarNotEqual -> mapOf("type" to "scalarNotEqual", "path" to path.map { it.key }, "scalar" to scalar.key, "value" to value)
+    is Condition.ScalarBetween<*> -> mapOf("type" to "scalarBetween", "path" to path.map { it.key }, "scalar" to scalar.key, "lower" to lower, "upper" to upper)
+    is Condition.IdEquals -> mapOf("type" to "idEquals", "path" to path.map { it.key }, "id" to id)
+    is Condition.MultilinkContains -> mapOf("type" to "multilinkContains", "path" to path.map { it.key }, "multilink" to multilink.key, "id" to id)
+    is Condition.MultilinkDoesNotContain -> mapOf("type" to "multilinkDoesNotContain", "path" to path.map { it.key }, "multilink" to multilink.key, "id" to id)
+}
+
+
 fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"] as? String)?.toLowerCase()) {
     "always" -> Condition.Always
     "never" -> Condition.Never
     "all" -> Condition.AllConditions((this["conditions"] as List<*>).map { (it as Map<String, Any?>).toCondition(table) })
     "any" -> Condition.AnyConditions((this["conditions"] as List<*>).map { (it as Map<String, Any?>).toCondition(table) })
-    "scalarEqual" -> {
+    "scalarequal" -> {
         var currentTable = table
         Condition.ScalarEqual(
                 path = (this["path"] as? List<String>)?.asSequence()?.map {
@@ -68,10 +130,10 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                     link
                 }?.toList() ?: listOf(),
                 scalar = currentTable.properties[this["scalar"] as String] as Scalar,
-                equals = this["value"]
+                value = this["value"]
         )
     }
-    "scalarNotEqual" -> {
+    "scalarnotequal" -> {
         var currentTable = table
         Condition.ScalarNotEqual(
                 path = (this["path"] as? List<String>)?.asSequence()?.map {
@@ -80,10 +142,10 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                     link
                 }?.toList() ?: listOf(),
                 scalar = currentTable.properties[this["scalar"] as String] as Scalar,
-                doesNotEqual = this["value"]
+                value = this["value"]
         )
     }
-    "scalarBetween" -> {
+    "scalarbetween" -> {
         var currentTable = table
         Condition.ScalarBetween<Comparable<Any>>(
                 path = (this["path"] as? List<String>)?.asSequence()?.map {
@@ -96,7 +158,7 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                 upper = this["upper"] as Comparable<Any>
         )
     }
-    "idEquals" -> {
+    "idequals" -> {
         var currentTable = table
         Condition.IdEquals(
                 path = (this["path"] as? List<String>)?.asSequence()?.map {
@@ -104,10 +166,10 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                     currentTable = link.table
                     link
                 }?.toList() ?: listOf(),
-                equals = this["id"] as String
+                id = this["id"] as String
         )
     }
-    "multilinkContains" -> {
+    "multilinkcontains" -> {
         var currentTable = table
         Condition.MultilinkContains(
                 path = (this["path"] as? List<String>)?.asSequence()?.map {
@@ -119,7 +181,7 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                 id = this["id"] as String
         )
     }
-    "multilinkDoesNotContains" -> {
+    "multilinkdoesnotcontains" -> {
         var currentTable = table
         Condition.MultilinkDoesNotContain(
                 path = (this["path"] as? List<String>)?.asSequence()?.map {
@@ -156,7 +218,7 @@ fun Map<String, Any?>.toQueryRequest(tableMap: Map<String, Table>): Request.Quer
     val table = tableMap[it] ?: throw IllegalArgumentException("Table '$it' not found")
     Request.Query(
             table = table,
-            condition = (this["read"] as Map<String, Any?>).toCondition(table),
+            condition = (this["condition"] as Map<String, Any?>).toCondition(table),
             read = (this["read"] as Map<String, Any?>).toRead(table)
     )
 }
@@ -185,11 +247,6 @@ fun JsonFactory.generateString(action: JsonGenerator.() -> Unit): String {
     gen.close()
     return stringWriter.toString()
 }
-
-fun Instance.toJsonString() = jsonFactory.generateString { writeInstance(this@toJsonString) }
-fun String.toRead(table: Table) = (JsonObjectMapper.readValue(this, Map::class.java) as Map<String, Any?>).toRead(table)
-fun String.toWrite(table: Table) = (JsonObjectMapper.readValue(this, Map::class.java) as Map<String, Any?>).toWrite(table)
-fun String.toWrite(id: String, table: Table) = (JsonObjectMapper.readValue(this, Map::class.java) as Map<String, Any?>).toWrite(id, table)
 
 
 fun Map<String, Any?>.toRead(table: Table): Read {

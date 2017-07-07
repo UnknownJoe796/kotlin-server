@@ -18,8 +18,8 @@ abstract class AbstractUserTable(tableName: String, tableDescription: String) : 
             description = "The password hash.",
             type = ScalarType.ShortString,
             readPermission = SecurityRules.never,
-            writeBeforePermission = SecurityRules.never,
-            writeAfterPermission = SecurityRules.never
+            editPermission = SecurityRules.never,
+            writePermission = SecurityRules.never
     ).register()
 
     fun checkPassword(instance: Instance, password: String): Boolean {

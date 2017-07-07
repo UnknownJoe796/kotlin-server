@@ -7,6 +7,6 @@ interface Property {
     val endVersion: Int
 
     val readPermission: SecurityRule
-    val writeBeforePermission: SecurityRule
-    val writeAfterPermission: SecurityRule
+    val editPermission: SecurityRule
+    val writePermission: SecurityRule
 }
