@@ -31,16 +31,16 @@ class UserTableAccess(val wraps: TableAccess, val tokenInformation: TokenInforma
         override val writeAfterPermission: SecurityRule = wraps.table.writeAfterPermission
     }
 
-    override fun get(user: Instance?, id: String, read: Read): Instance? {
+    override fun get(transaction: Transaction, id: String, read: Read): Instance? {
         val isReadingToken = read.scalars.remove(token)
-        val instance = wraps.get(user, id, read) ?: return null
+        val instance = wraps.get(transaction, id, read) ?: return null
         if (isReadingToken) instance.scalars[token] = tokenInformation.token(instance.id)
         return instance
     }
 
-    override fun query(user: Instance?, condition: Condition, read: Read): Collection<Instance> {
+    override fun query(transaction: Transaction, condition: Condition, read: Read): Collection<Instance> {
         val isReadingToken = read.scalars.remove(token)
-        return wraps.query(user, condition, read).also {
+        return wraps.query(transaction, condition, read).also {
             if (isReadingToken) {
                 for (instance in it) {
                     instance.scalars[token] = tokenInformation.token(instance.id)
@@ -49,22 +49,24 @@ class UserTableAccess(val wraps: TableAccess, val tokenInformation: TokenInforma
         }
     }
 
-    override fun update(user: Instance?, write: Write): Instance {
+    override fun update(transaction: Transaction, write: Write): Instance {
         val password = write.scalars.remove(password)
         if (password != null) {
             val salt = BCrypt.gensalt()
             write.scalars[wrapsTable.hash] = BCrypt.hashpw(password.toString(), salt)
         }
-        return wraps.update(user, write)
+        return wraps.update(transaction, write)
     }
 
-    override fun delete(user: Instance?, id: String): Boolean = wraps.delete(user, id)
+    override fun delete(transaction: Transaction, id: String): Boolean = wraps.delete(transaction, id)
 
     fun login(usernameScalar: Scalar, username: String, password: String, read: Read = table.defaultRead()): Instance {
         val isReadingToken = read.scalars.remove(token)
         read.scalars += wrapsTable.hash
-        val instance = wraps.query(null, condition = Condition.ScalarEqual(scalar = usernameScalar, value = username), read = read)
+        val transaction = Transaction()
+        val instance = wraps.query(transaction, condition = Condition.ScalarEqual(scalar = usernameScalar, value = username), read = read)
                 .firstOrNull() ?: throw exceptionNotFound("Username and password combination not found")
+        transaction.commit()
         val hash = instance.scalars.remove(wrapsTable.hash).toString()
         val passes = BCrypt.checkpw(password, hash)
         if (!passes) throw exceptionNotFound("Username and password combination not found")

@@ -8,6 +8,8 @@ import com.ivieleague.kotlin.server.exceptionBadRequest
 import com.ivieleague.kotlin.server.exceptionUnauthorized
 import com.ivieleague.kotlin.server.model.Instance
 import com.ivieleague.kotlin.server.model.Read
+import com.ivieleague.kotlin.server.model.TableAccess
+import com.ivieleague.kotlin.server.model.Transaction
 import java.util.*
 
 data class TokenInformation(
@@ -26,7 +28,7 @@ data class TokenInformation(
             .withClaim("user_id", userId)
             .sign(algorithm)
 
-    fun getUser(tableAccess: UserTableAccess, token: String, read: Read): Instance {
+    fun getUser(tableAccess: TableAccess, token: String, read: Read): Instance {
         val id = try {
             verifier
                     .verify(token)
@@ -37,6 +39,6 @@ data class TokenInformation(
         } catch(e: JWTVerificationException) {
             throw exceptionBadRequest("The token could not be parsed properly")
         }
-        return tableAccess.get(Instance(tableAccess.table, id), id, read) ?: throw exceptionBadRequest("Token indicates a user that does not exist")
+        return tableAccess.get(Transaction(readOnly = true, user = Instance(tableAccess.table, id)), id, read) ?: throw exceptionBadRequest("Token indicates a user that does not exist")
     }
 }
