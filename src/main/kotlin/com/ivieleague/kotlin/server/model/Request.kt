@@ -16,7 +16,7 @@ sealed class Request<T> {
         override fun invoke(transaction: Transaction, tableAccess: TableAccess): Boolean = tableAccess.delete(transaction, id)
     }
 
-    class Query(override var table: Table, var condition: Condition, var read: Read) : Request<List<Instance>>() {
-        override fun invoke(transaction: Transaction, tableAccess: TableAccess): List<Instance> = tableAccess.query(transaction, condition, read).toList()
+    class Query(override var table: Table, var read: Read) : Request<List<Instance>>() {
+        override fun invoke(transaction: Transaction, tableAccess: TableAccess): List<Instance> = tableAccess.query(transaction, read).toList()
     }
 }

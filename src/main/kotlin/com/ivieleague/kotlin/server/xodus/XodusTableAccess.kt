@@ -35,101 +35,133 @@ class XodusTableAccess(
         override val table: Table
 ) : TableAccess {
 
-    private fun Entity.toInstance(read: Read): Instance? {
+    private fun Entity.toInstance(transaction: StoreTransaction, read: Read): Instance? {
         return Instance(
                 table = table,
                 id = id.toString(),
                 scalars = read.scalars.associate { it to getProperty(it.key) }.toMutableMap(),
-                links = read.links.entries.associate { it.key to getLink(it.key.key)?.toInstance(it.value) }.toMutableMap(),
-                multilinks = read.multilinks.entries.associate { it.key to getLinks(it.key.key).mapNotNull { e -> e.toInstance(it.value) } }.toMutableMap()
+                links = read.links.entries.associate { it.key to getLink(it.key.key)?.toInstance(transaction, it.value) }.toMutableMap(),
+                multilinks = read.multilinks.entries.associate {
+                    val plus = EntityIterablePlusAlt(getLinks(it.key.key)).applyCondition(transaction, it.value.condition)
+                    it.key to plus.toInstances(transaction, it.value)
+                }.toMutableMap()
         )
     }
 
-    inner class EntityIterablePlus(val entityIterable: EntityIterable? = null, val filters: List<(Entity) -> Boolean> = listOf()) {
-        fun toList(transaction: StoreTransaction, read: Read): List<Instance> {
-            val iter = entityIterable ?: transaction.getAll(table.tableName)
-            return iter.asSequence().filter { entity -> filters.all { it.invoke(entity) } }.mapNotNull { it.toInstance(read) }.toList()
+    fun Condition.invoke(transaction: StoreTransaction, entity: Entity): Boolean {
+        val read = Read()
+        this.dependencies(read)
+        return entity.toInstance(transaction, read)?.let { this.invoke(it) } ?: false
+    }
+
+    inner class EntityIterablePlusAlt(var entityIterable: EntityIterable, var filter: ((Entity) -> Boolean)? = null) : Iterable<Entity> {
+        fun andFilter(condition: Condition) = andFilter { condition.invoke(entityIterable.transaction, it) }
+        fun andFilter(newFilter: (Entity) -> Boolean) {
+            val oldFilter = filter
+            if (oldFilter == null) {
+                filter = newFilter
+            } else {
+                filter = { oldFilter.invoke(it) && newFilter.invoke(it) }
+            }
+        }
+
+        fun orFilter(condition: Condition) = orFilter { condition.invoke(entityIterable.transaction, it) }
+        fun orFilter(newFilter: (Entity) -> Boolean) {
+            val oldFilter = filter
+            if (oldFilter == null) {
+                filter = newFilter
+            } else {
+                filter = { oldFilter.invoke(it) || newFilter.invoke(it) }
+            }
+        }
+
+        override fun iterator(): Iterator<Entity> {
+            val filter = filter
+            return if (filter == null)
+                entityIterable.asSequence().iterator()
+            else
+                entityIterable.asSequence().filter(filter).iterator()
+        }
+
+        fun copy() = EntityIterablePlusAlt(entityIterable, filter)
+        fun toInstances(transaction: StoreTransaction, read: Read): List<Instance> {
+            val startAfter = read.startAfter
+            val localId = startAfter?.substring(startAfter.indexOf('-'))?.toLongOrNull()
+            val seq = if (localId == null)
+                asSequence()
+            else
+                asSequence().dropWhile { it.id.localId <= localId }
+            return seq.take(read.count).mapNotNull { it.toInstance(transaction, read) }.toList()
         }
     }
 
-    private fun Condition.makeEntityIterable(
-            transaction: StoreTransaction
-    ): EntityIterablePlus = when (this) {
-        Condition.Always -> EntityIterablePlus(null)
-        Condition.Never -> EntityIterablePlus(null, listOf({ it: Entity -> false }))
-
-        is Condition.AllConditions -> if (this.conditions.isEmpty())
-            EntityIterablePlus(transaction.getAll(table.tableName))
-        else this.conditions.map { it.makeEntityIterable(transaction) }.reduce { a, b ->
-            EntityIterablePlus(
-                    entityIterable = if (a.entityIterable != null) {
-                        if (b.entityIterable != null)
-                            a.entityIterable.intersect(b.entityIterable)
-                        else
-                            a.entityIterable
-                    } else {
-                        b.entityIterable
-                    },
-                    filters = a.filters + b.filters
-            )
+    fun EntityIterablePlusAlt.applyCondition(transaction: StoreTransaction, condition: Condition): EntityIterablePlusAlt {
+        when (condition) {
+            Condition.Always -> {
+            }
+            Condition.Never -> {
+                filter = { false }
+            }
+            is Condition.AllConditions -> {
+                condition.conditions.forEach { applyCondition(transaction, it) }
+            }
+            is Condition.AnyConditions -> {
+                val iterables = condition.conditions.map { this.copy().applyCondition(transaction, it) }
+                if (iterables.all { it.filter == null }) {
+                    entityIterable = iterables.asSequence().map { it.entityIterable }.reduce { acc, other -> acc.union(other) }
+                } else {
+                    entityIterable = iterables.asSequence().map { it.entityIterable }.reduce { acc, other -> acc.union(other) }
+                    andFilter { condition.conditions.any { sub -> sub.invoke(transaction, it) } }
+                }
+            }
+            is Condition.ScalarEqual -> {
+                if (condition.path.isEmpty())
+                    entityIterable = entityIterable.intersect(transaction.find(table.tableName, condition.scalar.key, condition.value as Comparable<*>))
+                else
+                    andFilter(condition)
+            }
+            is Condition.ScalarNotEqual -> {
+                if (condition.path.isEmpty())
+                    entityIterable = entityIterable.intersect(
+                            transaction.getAll(table.tableName).minus(transaction.find(table.tableName, condition.scalar.key, condition.value as Comparable<*>))
+                    )
+                else
+                    andFilter(condition)
+            }
+            is Condition.ScalarBetween<*> -> {
+                if (condition.path.isEmpty())
+                    entityIterable = entityIterable.intersect(
+                            transaction.find(table.tableName, condition.scalar.key, condition.lower, condition.upper)
+                    )
+                else
+                    andFilter(condition)
+            }
+            is Condition.IdEquals -> {
+                andFilter { it.id.toString() == condition.id }
+            }
+            is Condition.MultilinkContains -> {
+                andFilter(condition)
+            }
+            is Condition.MultilinkDoesNotContain -> {
+                andFilter(condition)
+            }
         }
-
-        is Condition.AnyConditions -> if (this.conditions.isEmpty())
-            EntityIterablePlus(transaction.getAll(table.tableName))
-        else this.conditions.map { it.makeEntityIterable(transaction) }.reduce { a, b ->
-            EntityIterablePlus(
-                    entityIterable = if (a.entityIterable != null) {
-                        if (b.entityIterable != null)
-                            a.entityIterable.union(b.entityIterable)
-                        else
-                            a.entityIterable
-                    } else {
-                        b.entityIterable
-                    },
-                    filters = a.filters + b.filters
-            )
-        }
-
-        is Condition.ScalarEqual -> if (this.path.isEmpty())
-            EntityIterablePlus(transaction.find(table.tableName, this.scalar.key, this.value as Comparable<*>))
-        else
-            defaultIterable(transaction)
-
-        is Condition.ScalarNotEqual -> if (this.path.isEmpty())
-            EntityIterablePlus(transaction.getAll(table.tableName).minus(transaction.find(table.tableName, this.scalar.key, this.value as Comparable<*>)))
-        else
-            defaultIterable(transaction)
-
-        is Condition.ScalarBetween<*> -> if (this.path.isEmpty())
-            EntityIterablePlus(transaction.find(table.tableName, this.scalar.key, this.lower, this.upper))
-        else
-            defaultIterable(transaction)
-
-        is Condition.IdEquals -> defaultIterable(transaction)
-        is Condition.MultilinkContains -> defaultIterable(transaction)
-        is Condition.MultilinkDoesNotContain -> defaultIterable(transaction)
-    }
-
-    private fun Condition.defaultIterable(transaction: StoreTransaction): EntityIterablePlus {
-        return EntityIterablePlus(transaction.getAll(table.tableName), listOf({ it: Entity ->
-            val read = Read()
-            this.dependencies(read)
-            it.toInstance(read)?.let { this.invoke(it) } ?: false
-        }))
+        return this
     }
 
     override fun get(transaction: Transaction, id: String, read: Read): Instance? {
         val it = transaction.getXodus(entityStore)
         return try {
-            it.getEntity(it.toEntityId(id)).toInstance(read)
+            it.getEntity(it.toEntityId(id)).toInstance(it, read)
         } catch(e: EntityRemovedInDatabaseException) {
             throw IllegalArgumentException("ID not found")
         }
     }
 
-    override fun query(transaction: Transaction, condition: Condition, read: Read): List<Instance> {
+    override fun query(transaction: Transaction, read: Read): List<Instance> {
         val it = transaction.getXodus(entityStore)
-        return condition.makeEntityIterable(it).toList(it, read)
+        val run = EntityIterablePlusAlt(it.getAll(table.tableName)).applyCondition(it, read.condition)
+        return run.toInstances(it, read)
     }
 
     override fun update(transaction: Transaction, write: Write): Instance {

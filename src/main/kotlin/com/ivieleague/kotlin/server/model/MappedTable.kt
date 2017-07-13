@@ -35,6 +35,7 @@ class MappedTable(val wraps: TableAccess) : TableAccess, Table {
 
     private fun innerRead(transaction: Transaction, outer: Read): Read {
         val inner = Read()
+        inner.condition = innerQuery(transaction, outer.condition)
         for (property in outer.scalars) {
             scalarMappers[property]?.mapRead(transaction, inner)
         }
@@ -84,8 +85,8 @@ class MappedTable(val wraps: TableAccess) : TableAccess, Table {
         return wraps.get(transaction, id, innerRead(transaction, read))?.let { innerInstanceToOuter(transaction, it, read) }
     }
 
-    override fun query(transaction: Transaction, condition: Condition, read: Read): List<Instance> {
-        return wraps.query(transaction, innerQuery(transaction, condition), innerRead(transaction, read)).map { innerInstanceToOuter(transaction, it, read) }
+    override fun query(transaction: Transaction, read: Read): List<Instance> {
+        return wraps.query(transaction, innerRead(transaction, read)).map { innerInstanceToOuter(transaction, it, read) }
     }
 
     override fun update(transaction: Transaction, write: Write): Instance {

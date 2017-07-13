@@ -8,7 +8,6 @@ import org.jetbrains.ktor.routing.*
 fun Route.restNest(schema: Schema, userGetter: (ApplicationCall) -> Instance? = { null }) {
     post("multi") {
         exceptionWrap {
-            val user = userGetter.invoke(it)
             val results = HashMap<String, Any?>()
             val result = try {
                 val raw = it.request.receiveJson<LinkedHashMap<String, Any?>>()!!
@@ -48,7 +47,7 @@ fun Route.restNest(tableAccess: TableAccess, userGetter: (ApplicationCall) -> In
     get("") {
         exceptionWrap {
             Transaction(userGetter.invoke(it), readOnly = true).use { txn ->
-                val result = tableAccess.query(txn, Condition.Always, tableAccess.table.defaultRead())
+                val result = tableAccess.query(txn, tableAccess.table.defaultRead())
                 it.respondJson(result)
             }
         }
@@ -69,7 +68,7 @@ fun Route.restNest(tableAccess: TableAccess, userGetter: (ApplicationCall) -> In
                 throw exceptionBadRequest(e.message)
             }
             Transaction(userGetter.invoke(it), readOnly = true).use { txn ->
-                val result = tableAccess.query(txn, Condition.Always, request)
+                val result = tableAccess.query(txn, request)
                 it.respondJson(result)
             }
         }
@@ -103,7 +102,9 @@ fun Route.restNest(tableAccess: TableAccess, userGetter: (ApplicationCall) -> In
     put("/{id}") {
         exceptionWrap {
             val input = try {
-                it.request.receiveJson<Map<String, Any?>>()!!.toWrite(tableAccess.table)
+                it.request.receiveJson<Map<String, Any?>>()!!.toWrite(tableAccess.table).apply {
+                    id = call.parameters["id"]!!
+                }
             } catch(e: Exception) {
                 throw exceptionBadRequest(e.message)
             }

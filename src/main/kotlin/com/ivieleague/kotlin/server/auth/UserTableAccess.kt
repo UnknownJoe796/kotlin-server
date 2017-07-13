@@ -38,9 +38,9 @@ class UserTableAccess(val wraps: TableAccess, val tokenInformation: TokenInforma
         return instance
     }
 
-    override fun query(transaction: Transaction, condition: Condition, read: Read): Collection<Instance> {
+    override fun query(transaction: Transaction, read: Read): Collection<Instance> {
         val isReadingToken = read.scalars.remove(token)
-        return wraps.query(transaction, condition, read).also {
+        return wraps.query(transaction, read).also {
             if (isReadingToken) {
                 for (instance in it) {
                     instance.scalars[token] = tokenInformation.token(instance.id)
@@ -63,8 +63,9 @@ class UserTableAccess(val wraps: TableAccess, val tokenInformation: TokenInforma
     fun login(usernameScalar: Scalar, username: String, password: String, read: Read = table.defaultRead()): Instance {
         val isReadingToken = read.scalars.remove(token)
         read.scalars += wrapsTable.hash
+        read.condition = Condition.ScalarEqual(scalar = usernameScalar, value = username)
         val transaction = Transaction()
-        val instance = wraps.query(transaction, condition = Condition.ScalarEqual(scalar = usernameScalar, value = username), read = read)
+        val instance = wraps.query(transaction, read = read)
                 .firstOrNull() ?: throw exceptionNotFound("Username and password combination not found")
         transaction.commit()
         val hash = instance.scalars.remove(wrapsTable.hash).toString()

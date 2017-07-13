@@ -24,7 +24,7 @@ object KotlinServerModelsModule : SimpleModule("KotlinServerModelsModule", Versi
 
 fun JsonGenerator.writeInstance(instance: Instance) {
     writeStartObject()
-    writeStringField("id", instance.id)
+    writeStringField("_id", instance.id)
     for ((scalar, value) in instance.scalars) {
         when (value) {
             is Byte -> writeNumberField(scalar.key, value.toInt())
@@ -181,7 +181,7 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                 id = this["id"] as String
         )
     }
-    "multilinkdoesnotcontains" -> {
+    "multilinkdoesnotcontain" -> {
         var currentTable = table
         Condition.MultilinkDoesNotContain(
                 path = (this["path"] as? List<String>)?.asSequence()?.map {
@@ -197,7 +197,7 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
 }
 
 
-fun Map<String, Any?>.toRequest(tableMap: Map<String, Table>) = when (this["request"]) {
+fun Map<String, Any?>.toRequest(tableMap: Map<String, Table>) = when (this["_request"]) {
     "get" -> toGetRequest(tableMap)
     "update" -> toUpdateRequest(tableMap)
     "delete" -> toDeleteRequest(tableMap)
@@ -205,37 +205,46 @@ fun Map<String, Any?>.toRequest(tableMap: Map<String, Table>) = when (this["requ
     else -> throw IllegalArgumentException()
 }
 
-fun Map<String, Any?>.toGetRequest(tableMap: Map<String, Table>): Request.Get = (this["table"] as String).let {
+fun Map<String, Any?>.toGetRequest(tableMap: Map<String, Table>): Request.Get = (this["_table"] as String).let {
     val table = tableMap[it] ?: throw IllegalArgumentException("Table '$it' not found")
     Request.Get(
             table = table,
-            id = this["id"] as String,
-            read = (this["read"] as Map<String, Any?>).toRead(table)
+            id = this["_id"] as String,
+            read = this.toMutableMap().apply {
+                remove("_id")
+                remove("_table")
+                remove("_request")
+            }.toRead(table)
     )
 }
 
-fun Map<String, Any?>.toQueryRequest(tableMap: Map<String, Table>): Request.Query = (this["table"] as String).let {
+fun Map<String, Any?>.toQueryRequest(tableMap: Map<String, Table>): Request.Query = (this["_table"] as String).let {
     val table = tableMap[it] ?: throw IllegalArgumentException("Table '$it' not found")
     Request.Query(
             table = table,
-            condition = (this["condition"] as Map<String, Any?>).toCondition(table),
-            read = (this["read"] as Map<String, Any?>).toRead(table)
+            read = this.toMutableMap().apply {
+                remove("_table")
+                remove("_request")
+            }.toRead(table)
     )
 }
 
-fun Map<String, Any?>.toUpdateRequest(tableMap: Map<String, Table>): Request.Update = (this["table"] as String).let {
+fun Map<String, Any?>.toUpdateRequest(tableMap: Map<String, Table>): Request.Update = (this["_table"] as String).let {
     val table = tableMap[it] ?: throw IllegalArgumentException("Table '$it' not found")
     Request.Update(
             table = table,
-            write = (this["write"] as Map<String, Any?>).toWrite(table)
+            write = this.toMutableMap().apply {
+                remove("_table")
+                remove("_request")
+            }.toWrite(table)
     )
 }
 
-fun Map<String, Any?>.toDeleteRequest(tableMap: Map<String, Table>): Request.Delete = (this["table"] as String).let {
+fun Map<String, Any?>.toDeleteRequest(tableMap: Map<String, Table>): Request.Delete = (this["_table"] as String).let {
     val table = tableMap[it] ?: throw IllegalArgumentException("Table '$it' not found")
     Request.Delete(
             table = table,
-            id = this["id"] as String
+            id = this["_id"] as String
     )
 }
 
@@ -258,7 +267,14 @@ fun Map<String, Any?>.toRead(table: Table): Read {
             is Scalar -> if (value !is Boolean || value) read.scalars += property
             is Link -> read.links[property] = (value as Map<String, Any?>).toRead(property.table)
             is Multilink -> read.multilinks[property] = (value as Map<String, Any?>).toRead(property.table)
-            null -> throw IllegalArgumentException("Key '$key' not found in table $table.")
+            null -> {
+                when (key) {
+                    "_condition" -> read.condition = (value as Map<String, Any?>).toCondition(table)
+                    "_start_after" -> read.startAfter = (value as String)
+                    "_count" -> read.count = (value as Number).toInt()
+                    else -> throw IllegalArgumentException("Key '$key' not found in table $table.")
+                }
+            }
         }
     }
 
@@ -310,7 +326,7 @@ fun Map<String, Any?>.toWrite(table: Table): Write {
             }
         }
     }
-    return Write(this["id"]?.toString(), scalars, links, multilinks)
+    return Write(this["_id"]?.toString(), scalars, links, multilinks)
 }
 
 fun Map<String, Any?>.toWrite(id: String, table: Table) = toWrite(table).apply { this.id = id }

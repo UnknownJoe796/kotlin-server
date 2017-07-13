@@ -37,7 +37,7 @@ fun Request.Get.populate(data: Map<String, Any?>) {
 }
 
 fun Request.Query.populate(data: Map<String, Any?>) {
-    condition = condition.populate(data)
+    read.condition = read.condition.populate(data)
 }
 
 fun Request.Update.populate(data: Map<String, Any?>) {

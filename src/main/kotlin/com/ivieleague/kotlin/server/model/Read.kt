@@ -5,6 +5,10 @@ class Read(
         links: Map<Link, Read> = mapOf(),
         multilinks: Map<Multilink, Read> = mapOf()
 ) {
+    var condition: Condition = Condition.Always
+    var startAfter: String? = null
+    var count: Int = 100
+
     val scalars: HashSet<Scalar> = HashSet(scalars)
     val links: HashMap<Link, Read> = HashMap(links)
     val multilinks: HashMap<Multilink, Read> = HashMap(multilinks)
