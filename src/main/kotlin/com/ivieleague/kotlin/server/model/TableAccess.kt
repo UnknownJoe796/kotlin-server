@@ -3,8 +3,8 @@ package com.ivieleague.kotlin.server.model
 
 interface TableAccess {
     val table: Table
-    fun get(user: Instance?, id: String, read: Read): Instance?
-    fun query(user: Instance?, condition: Condition, read: Read): Collection<Instance>
-    fun update(user: Instance?, write: Write): Instance
-    fun delete(user: Instance?, id: String): Boolean
+    fun get(transaction: Transaction, id: String, read: Read): Instance?
+    fun query(transaction: Transaction, condition: Condition, read: Read): Collection<Instance>
+    fun update(transaction: Transaction, write: Write): Instance
+    fun delete(transaction: Transaction, id: String): Boolean
 }

@@ -2,16 +2,36 @@ package com.ivieleague.kotlin.server.xodus
 
 import com.ivieleague.kotlin.server.model.*
 import jetbrains.exodus.entitystore.*
+import java.util.*
 
-class XodusAccess(val entityStore: PersistentEntityStore) : Fetcher<Table, XodusTableAccess> {
+val Transaction_xodus = WeakHashMap<PersistentEntityStore, WeakHashMap<Transaction, StoreTransaction>>()
+fun Transaction.getXodus(store: PersistentEntityStore): StoreTransaction {
+    return Transaction_xodus.getOrPut(store) { WeakHashMap() }.getOrPut(this) {
+        val txn = if (this.readOnly) store.beginReadonlyTransaction()
+        else store.beginTransaction()
 
-    val cached = HashMap<Table, XodusTableAccess>()
+        this.onCommit += { txn.commit() }
+        this.onFail += { txn.abort() }
 
-    override fun get(key: Table): XodusTableAccess = cached.getOrPut(key) { XodusTableAccess(this, key) }
+        txn
+    }
+}
+
+val Instance_xodus = WeakHashMap<EntityStore, WeakHashMap<String, Entity>>()
+fun Instance.getXodus(transaction: StoreTransaction): Entity? {
+    val store = transaction.store
+    return Instance_xodus.getOrPut(store, { WeakHashMap() }).getOrPut(this.id, {
+        transaction.getEntity(transaction.toEntityId(this.id))
+    })
+}
+
+fun Instance.setXodus(store: EntityStore, entity: Entity) {
+    Instance_xodus.getOrPut(store, { WeakHashMap() })[this.id] = entity
 }
 
 class XodusTableAccess(
-        val xodusAccess: XodusAccess,
+        val entityStore: PersistentEntityStore,
+        val tableAccesses: Fetcher<Table, TableAccess>,
         override val table: Table
 ) : TableAccess {
 
@@ -23,16 +43,6 @@ class XodusTableAccess(
                 links = read.links.entries.associate { it.key to getLink(it.key.key)?.toInstance(it.value) }.toMutableMap(),
                 multilinks = read.multilinks.entries.associate { it.key to getLinks(it.key.key).mapNotNull { e -> e.toInstance(it.value) } }.toMutableMap()
         )
-    }
-
-    override fun get(user: Instance?, id: String, read: Read): Instance? {
-        return xodusAccess.entityStore.beginReadonlyTransaction().use {
-            try {
-                it.getEntity(it.toEntityId(id)).toInstance(read)
-            } catch(e: EntityRemovedInDatabaseException) {
-                throw IllegalArgumentException("ID not found")
-            }
-        }
     }
 
     inner class EntityIterablePlus(val entityIterable: EntityIterable? = null, val filters: List<(Entity) -> Boolean> = listOf()) {
@@ -108,22 +118,24 @@ class XodusTableAccess(
         }))
     }
 
-    override fun query(user: Instance?, condition: Condition, read: Read): List<Instance> {
-        return xodusAccess.entityStore.beginReadonlyTransaction().use {
-            condition.makeEntityIterable(it).toList(it, read)
+    override fun get(transaction: Transaction, id: String, read: Read): Instance? {
+        val it = transaction.getXodus(entityStore)
+        return try {
+            it.getEntity(it.toEntityId(id)).toInstance(read)
+        } catch(e: EntityRemovedInDatabaseException) {
+            throw IllegalArgumentException("ID not found")
         }
     }
 
-    override fun update(user: Instance?, write: Write): Instance {
-        return xodusAccess.entityStore.beginTransaction().use {
-            privateWrite(write, it).second
-        }
+    override fun query(transaction: Transaction, condition: Condition, read: Read): List<Instance> {
+        val it = transaction.getXodus(entityStore)
+        return condition.makeEntityIterable(it).toList(it, read)
     }
 
-    private fun privateWrite(write: Write, txn: StoreTransaction): Pair<Entity, Instance> {
-
+    override fun update(transaction: Transaction, write: Write): Instance {
         val linkEntities = HashMap<Link, Instance?>()
         val multilinkEntities = HashMap<Multilink, Collection<Instance>>()
+        val txn = transaction.getXodus(entityStore)
 
         val id = write.id
         val entity = if (id == null) txn.newEntity(table.tableName) else try {
@@ -136,9 +148,14 @@ class XodusTableAccess(
         }
         for ((link, subwrite) in write.links) {
             if (subwrite != null) {
-                val result = xodusAccess[link.table].privateWrite(subwrite, txn)
-                entity.setLink(link.key, result.first)
-                linkEntities[link] = result.second
+                val result = tableAccesses[link.table].update(transaction, subwrite)
+                val xodus = result.getXodus(txn)
+                if (xodus != null) {
+                    entity.setLink(link.key, xodus)
+                    linkEntities[link] = result
+                } else {
+                    entity.setProperty(link.key, result.id)
+                }
             } else {
                 entity.setLink(link.key, null)
             }
@@ -149,41 +166,73 @@ class XodusTableAccess(
             val replacements = writes.replacements
             if (replacements != null) {
                 entity.deleteLinks(multilink.key)
+                entity.deleteProperty(multilink.key)
+                val ids = ArrayList<String>()
                 for (subwrite in replacements) {
-                    val result = xodusAccess[multilink.table].privateWrite(subwrite, txn)
-                    entity.addLink(multilink.key, result.first)
-                    instances.add(result.second)
+                    val result = tableAccesses[multilink.table].update(transaction, subwrite)
+                    val xodus = result.getXodus(txn)
+                    if (xodus != null) {
+                        entity.addLink(multilink.key, xodus)
+                        instances.add(result)
+                    } else {
+                        ids += result.id
+                    }
                 }
+                if (ids.isNotEmpty())
+                    entity.setProperty(multilink.key, ids.joinToString("|", prefix = "|"))
             }
 
             val additions = writes.additions
             if (additions != null) {
+                val ids = ArrayList<String>()
                 for (subwrite in additions) {
-                    val result = xodusAccess[multilink.table].privateWrite(subwrite, txn)
-                    entity.addLink(multilink.key, result.first)
-                    instances.add(result.second)
+                    val result = tableAccesses[multilink.table].update(transaction, subwrite)
+                    val xodus = result.getXodus(txn)
+                    if (xodus != null) {
+                        entity.addLink(multilink.key, xodus)
+                        instances.add(result)
+                    } else {
+                        ids += result.id
+                    }
                 }
+                if (ids.isNotEmpty())
+                    entity.setProperty(multilink.key, entity.getProperty(multilink.key).toString() + ids.joinToString("|", prefix = "|"))
             }
 
             val removals = writes.removals
             if (removals != null) {
+                val ids = ArrayList<String>()
                 for (subwrite in removals) {
-                    val result = xodusAccess[multilink.table].privateWrite(subwrite, txn)
-                    entity.deleteLink(multilink.key, result.first)
+                    val result = tableAccesses[multilink.table].update(transaction, subwrite)
+                    val xodus = result.getXodus(txn)
+                    if (xodus != null) {
+                        entity.deleteLink(multilink.key, xodus)
+                        instances.add(result)
+                    } else {
+                        ids += result.id
+                    }
+                }
+                if (ids.isNotEmpty()) {
+                    var stringIds = entity.getProperty(multilink.key).toString()
+                    for (subId in ids) {
+                        stringIds = stringIds.replace("|" + subId, "")
+                    }
+                    entity.setProperty(multilink.key, stringIds)
                 }
             }
         }
 
-        return entity to Instance(table, entity.id.toString(), mutableMapOf(), linkEntities, multilinkEntities)
+        val instance = Instance(table, entity.id.toString(), mutableMapOf(), linkEntities, multilinkEntities)
+        instance.setXodus(entityStore, entity)
+        return instance
     }
 
-    override fun delete(user: Instance?, id: String): Boolean {
-        return xodusAccess.entityStore.beginTransaction().use {
-            try {
-                it.getEntity(it.toEntityId(id)).delete()
-            } catch(e: EntityRemovedInDatabaseException) {
-                throw IllegalArgumentException("ID not found")
-            }
+    override fun delete(transaction: Transaction, id: String): Boolean {
+        val it = transaction.getXodus(entityStore)
+        return try {
+            it.getEntity(it.toEntityId(id)).delete()
+        } catch(e: EntityRemovedInDatabaseException) {
+            throw IllegalArgumentException("ID not found")
         }
     }
 
