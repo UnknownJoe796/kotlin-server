@@ -116,6 +116,7 @@ fun Condition.toInfoMap(): Map<String, Any?> = when (this) {
 }
 
 
+@Suppress("UNCHECKED_CAST")
 fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"] as? String)?.toLowerCase()) {
     "always" -> Condition.Always
     "never" -> Condition.Never
@@ -258,6 +259,29 @@ fun JsonFactory.generateString(action: JsonGenerator.() -> Unit): String {
 }
 
 
+@Suppress("UNCHECKED_CAST")
+fun Map<String, Any?>.toInstance(table: Table): Instance {
+    val instance = Instance(table = table, id = "")
+
+    for ((key, value) in this) {
+        val property = table.properties[key]
+        when (property) {
+            is Scalar -> instance.scalars[property] = value
+            is Link -> instance.links[property] = (value as Map<String, Any?>).toInstance(property.table)
+            is Multilink -> instance.multilinks[property] = (value as List<Map<String, Any?>>).map { it.toInstance(property.table) }
+        }
+    }
+
+    return instance
+}
+
+fun Map<String, Any?>.toSort(table: Table): Sort = Sort(
+        scalar = table.properties[this["scalar"] as String] as Scalar,
+        ascending = this["ascending"] as? Boolean ?: true,
+        nullsLast = this["nulls_last"] as? Boolean ?: true
+)
+
+@Suppress("UNCHECKED_CAST")
 fun Map<String, Any?>.toRead(table: Table): Read {
     val read = Read()
 
@@ -269,9 +293,10 @@ fun Map<String, Any?>.toRead(table: Table): Read {
             is Multilink -> read.multilinks[property] = (value as Map<String, Any?>).toRead(property.table)
             null -> {
                 when (key) {
-                    "_condition" -> read.condition = (value as Map<String, Any?>).toCondition(table)
-                    "_start_after" -> read.startAfter = (value as String)
-                    "_count" -> read.count = (value as Number).toInt()
+                    "_condition" -> read.condition = (value as? Map<String, Any?>)?.toCondition(table) ?: Condition.Always
+                    "_start_after" -> read.startAfter = (value as? Map<String, Any?>)?.toInstance(table)
+                    "_sort" -> read.sort = (value as? List<Map<String, Any?>>)?.map { it.toSort(table) } ?: listOf()
+                    "_count" -> read.count = (value as? Number)?.toInt() ?: 100
                     else -> throw IllegalArgumentException("Key '$key' not found in table $table.")
                 }
             }
@@ -282,6 +307,7 @@ fun Map<String, Any?>.toRead(table: Table): Read {
 }
 
 
+@Suppress("UNCHECKED_CAST")
 fun Map<String, Any?>.toWrite(table: Table): Write {
 
     val scalars = HashMap<Scalar, Any?>()

@@ -41,8 +41,8 @@ suspend fun ApplicationCall.respondJson(result: Any?) {
 }
 
 inline suspend fun <reified T> ApplicationRequest.receiveJson(): T? {
+    val contentType = this.contentType()
     try {
-        val contentType = this.contentType()
         return when (contentType) {
             ContentTypeApplicationMessagePack -> MessagePackObjectMapper.readValue(receive<InputStream>(), T::class.java)
             ContentTypeApplicationBson -> MessagePackObjectMapper.readValue(receive<InputStream>(), T::class.java)
@@ -51,6 +51,6 @@ inline suspend fun <reified T> ApplicationRequest.receiveJson(): T? {
             else -> throw exceptionBadRequest("Cannot read format $contentType")
         }
     } catch(e: Exception) {
-        throw exceptionBadRequest("Bad format")
+        throw exceptionBadRequest("Malformed $contentType")
     }
 }

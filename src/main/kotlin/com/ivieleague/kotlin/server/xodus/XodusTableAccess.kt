@@ -86,12 +86,51 @@ class XodusTableAccess(
         fun copy() = EntityIterablePlusAlt(entityIterable, filter)
         fun toInstances(transaction: StoreTransaction, read: Read): List<Instance> {
             val startAfter = read.startAfter
-            val localId = startAfter?.substring(startAfter.indexOf('-'))?.toLongOrNull()
-            val seq = if (localId == null)
+            val comparator = if (read.sort.isNotEmpty()) {
+                { a: Entity, b: Instance -> a.id.localId < b.id.substring(b.id.indexOf('-') + 1).toLongOrNull() ?: 0L }
+            } else lambdaBefore(read.sort)
+
+            val seq = if (startAfter == null)
                 asSequence()
             else
-                asSequence().dropWhile { it.id.localId <= localId }
-            return seq.take(read.count).mapNotNull { it.toInstance(transaction, read) }.toList()
+                asSequence().dropWhile {
+                    comparator.invoke(it, startAfter)
+                }
+
+            if (read.sort.isEmpty())
+                return seq.take(read.count).mapNotNull { it.toInstance(transaction, read) }.toList()
+            else
+                return seq.sortedWith(comparator(read.sort)).take(read.count).mapNotNull { it.toInstance(transaction, read) }.toList()
+        }
+    }
+
+    fun comparator(sort: List<Sort>) = object : kotlin.Comparator<Entity> {
+
+        @Suppress("UNCHECKED_CAST")
+        val comparators = sort.map { it.comparator() as SortComparator<Any?> }
+
+        override fun compare(a: Entity, b: Entity): Int {
+            for (comp in comparators) {
+                val scalar = comp.sort.scalar
+                val result = comp.compare(a.getProperty(scalar.key), b.getProperty(scalar.key))
+                if (result != 0) return result
+            }
+            return a.id.compareTo(b.id)
+        }
+    }
+
+    fun lambdaBefore(sort: List<Sort>): (Entity, Instance) -> Boolean = object : (Entity, Instance) -> Boolean {
+
+        @Suppress("UNCHECKED_CAST")
+        val comparators = sort.map { it.comparator() as SortComparator<Any?> }
+
+        override fun invoke(a: Entity, b: Instance): Boolean {
+            for (comp in comparators) {
+                val scalar = comp.sort.scalar
+                val result = comp.compare(a.getProperty(scalar.key), b.scalars[scalar])
+                if (result != 0) return result == -1
+            }
+            return a.id.localId < b.id.substring(b.id.indexOf('-') + 1).toLongOrNull() ?: 0L
         }
     }
 

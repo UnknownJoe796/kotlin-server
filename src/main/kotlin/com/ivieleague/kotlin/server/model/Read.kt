@@ -6,7 +6,8 @@ class Read(
         multilinks: Map<Multilink, Read> = mapOf()
 ) {
     var condition: Condition = Condition.Always
-    var startAfter: String? = null
+    var sort: List<Sort> = listOf()
+    var startAfter: Instance? = null
     var count: Int = 100
 
     val scalars: HashSet<Scalar> = HashSet(scalars)
