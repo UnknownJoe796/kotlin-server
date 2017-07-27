@@ -294,7 +294,7 @@ fun Map<String, Any?>.toRead(table: Table): Read {
             null -> {
                 when (key) {
                     "_condition" -> read.condition = (value as? Map<String, Any?>)?.toCondition(table) ?: Condition.Always
-                    "_start_after" -> read.startAfter = (value as? Map<String, Any?>)?.toInstance(table)
+                    "_after" -> read.startAfter = (value as? Map<String, Any?>)?.toInstance(table)
                     "_sort" -> read.sort = (value as? List<Map<String, Any?>>)?.map { it.toSort(table) } ?: listOf()
                     "_count" -> read.count = (value as? Number)?.toInt() ?: 100
                     else -> throw IllegalArgumentException("Key '$key' not found in table $table.")

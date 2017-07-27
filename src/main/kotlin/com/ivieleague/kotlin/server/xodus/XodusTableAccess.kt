@@ -86,21 +86,21 @@ class XodusTableAccess(
         fun copy() = EntityIterablePlusAlt(entityIterable, filter)
         fun toInstances(transaction: StoreTransaction, read: Read): List<Instance> {
             val startAfter = read.startAfter
-            val comparator = if (read.sort.isNotEmpty()) {
+            val comparator = if (read.sort.isEmpty()) {
                 { a: Entity, b: Instance -> a.id.localId < b.id.substring(b.id.indexOf('-') + 1).toLongOrNull() ?: 0L }
             } else lambdaBefore(read.sort)
 
-            val seq = if (startAfter == null)
+            val seq = if (read.sort.isEmpty()) {
                 asSequence()
-            else
-                asSequence().dropWhile {
-                    comparator.invoke(it, startAfter)
-                }
+            } else {
+                asSequence().sortedWith(comparator(read.sort))
+            }
 
-            if (read.sort.isEmpty())
-                return seq.take(read.count).mapNotNull { it.toInstance(transaction, read) }.toList()
-            else
-                return seq.sortedWith(comparator(read.sort)).take(read.count).mapNotNull { it.toInstance(transaction, read) }.toList()
+            val skippingSeq = if (startAfter == null) seq else seq.dropWhile {
+                comparator.invoke(it, startAfter)
+            }
+
+            return skippingSeq.take(read.count).mapNotNull { it.toInstance(transaction, read) }.toList()
         }
     }
 
@@ -128,9 +128,9 @@ class XodusTableAccess(
             for (comp in comparators) {
                 val scalar = comp.sort.scalar
                 val result = comp.compare(a.getProperty(scalar.key), b.scalars[scalar])
-                if (result != 0) return result == -1
+                if (result != 0) return result < 0
             }
-            return a.id.localId < b.id.substring(b.id.indexOf('-') + 1).toLongOrNull() ?: 0L
+            return a.id.localId <= b.id.substring(b.id.indexOf('-') + 1).toLongOrNull() ?: 0L
         }
     }
 

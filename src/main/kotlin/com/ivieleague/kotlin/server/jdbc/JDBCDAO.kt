@@ -1,30 +1,18 @@
-package com.ivieleague.kotlin.server.jdbc
-
-//class JBDCTableAccess(val connection:Connection, override val table: Table): TableAccess {
+//package com.ivieleague.kotlin.server.jdbc
 //
-//    init{
-//        connection.c
-//    }
+//import com.ivieleague.kotlin.server.model.*
+//import java.sql.Connection
+//import java.sql.ResultSet
+//import java.sql.Timestamp
+//import java.util.*
 //
-//    override fun get(user: Instance?, id: String, read: Read): Instance? {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-//    }
 //
-//    override fun query(user: Instance?, condition: Condition, read: Read): List<Instance> {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-//    }
-//
-//    override fun update(user: Instance?, write: Write): Instance {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-//    }
-//
-//    override fun delete(user: Instance?, id: String): Boolean {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-//    }
-//
-//}
-
-//class JDBCDAO(val connection: Connection, val database: String, val schema: Schema) : DAO {
+//class JDBCTableAccess(
+//        val connection: Connection,
+//        val database: String,
+//        override val table:Table,
+//        val tableAccesses: Fetcher<Table, TableAccess>
+//) : TableAccess {
 //
 //    fun ScalarType.mapped(): String = when (this) {
 //        ScalarType.Boolean -> "BOOL"
@@ -43,17 +31,17 @@ package com.ivieleague.kotlin.server.jdbc
 //    fun mapToKotlin(wraps: Scalar, result: ResultSet): Any? {
 //        val type = wraps.type
 //        return when (type) {
-//            ScalarType.Boolean -> result.getBoolean(wraps.name)
-//            ScalarType.Byte -> result.getByte(wraps.name)
-//            ScalarType.Short -> result.getShort(wraps.name)
-//            ScalarType.Int -> result.getInt(wraps.name)
-//            ScalarType.Long -> result.getLong(wraps.name)
-//            ScalarType.Float -> result.getFloat(wraps.name)
-//            ScalarType.Double -> result.getDouble(wraps.name)
-//            ScalarType.ShortString -> result.getString(wraps.name)
-//            ScalarType.LongString -> result.getString(wraps.name)
-//            ScalarType.Date -> result.getDate(wraps.name)
-//            is ScalarType.Enum -> type.enum[result.getByte(wraps.name)]
+//            ScalarType.Boolean -> result.getBoolean(wraps.key)
+//            ScalarType.Byte -> result.getByte(wraps.key)
+//            ScalarType.Short -> result.getShort(wraps.key)
+//            ScalarType.Int -> result.getInt(wraps.key)
+//            ScalarType.Long -> result.getLong(wraps.key)
+//            ScalarType.Float -> result.getFloat(wraps.key)
+//            ScalarType.Double -> result.getDouble(wraps.key)
+//            ScalarType.ShortString -> result.getString(wraps.key)
+//            ScalarType.LongString -> result.getString(wraps.key)
+//            ScalarType.Date -> result.getDate(wraps.key)
+//            is ScalarType.Enum -> type.enum[result.getByte(wraps.key)]
 //        }
 //    }
 //
@@ -79,24 +67,29 @@ package com.ivieleague.kotlin.server.jdbc
 //                """CREATE TABLE ${table.tableName}(
 //                    ID INT  SERIAL PRIMARY KEY,""" +
 //                        table.properties.values.joinToString(",\n") {
-//                            it.run { "$name ${type.mapped()}" }
+//                            it.run { "$key ${type.mapped()}" }
 //                        } + """,
 //                    PRIMARY KEY (ID)
 //                )"""
 //        )
 //    }
 //
-//    override fun get(table: Table, id: String, output: Output): Instance? {
+//    override fun get(transaction: Transaction, id: String, read: Read): Instance? {
 //        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 //    }
 //
-//    override fun query(table: Table, condition: Condition, output: Output): Collection<Instance> {
+//    override fun query(transaction: Transaction, read: Read): Collection<Instance> {
 //        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 //    }
 //
-//    override fun update(table: Table, input: Input): Instance {
+//    override fun update(transaction: Transaction, write: Write): Instance {
 //        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 //    }
+//
+//    override fun delete(transaction: Transaction, id: String): Boolean {
+//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+//    }
+//
 //
 //    //    override fun get(table: Table, id: String, properties: Collection<Property>): Instance? {
 ////        val result = connection.createStatement().executeQuery("SELECT id, ${properties.joinToString { it.name }} FROM ${table.tableName} WHERE id = ${id.toLong()}")
@@ -123,10 +116,6 @@ package com.ivieleague.kotlin.server.jdbc
 ////            generatedKeys.next()
 ////            return get(table, generatedKeys.getInt("id").toString(), outProperties)!!
 ////        }
-////    }
-////
-////    override fun query(table: Table, queryConditions: List<Condition>, outProperties: Collection<Property>): Collection<Instance> {
-////        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 ////    }
 //
 //}
