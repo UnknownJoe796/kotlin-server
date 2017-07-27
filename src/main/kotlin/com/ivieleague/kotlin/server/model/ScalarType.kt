@@ -39,6 +39,10 @@ sealed class ScalarType(val type: KClass<*>) {
         override fun toString() = "LongString"
     }
 
+    object JSON : ScalarType(String::class) {
+        override fun toString() = "JSON"
+    }
+
     object Date : ScalarType(Date::class) {
         override fun toString() = "Date"
     }

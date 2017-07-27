@@ -341,6 +341,7 @@ fun Map<String, Any?>.toWrite(table: Table): Write {
                         ScalarType.ShortString -> value as String
                         ScalarType.LongString -> value as String
                         ScalarType.Date -> Date(value as Long)
+                        ScalarType.JSON -> value
                         is ScalarType.Enum -> type.enum.indexedByName[value as String]!!.value
                     }
                 }

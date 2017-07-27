@@ -1,5 +1,6 @@
 package com.ivieleague.kotlin.server.model
 
+import com.ivieleague.kotlin.server.exceptionBadRequest
 import java.util.*
 
 private val Table_properties = WeakHashMap<Table, Map<String, Property>>()
@@ -27,6 +28,7 @@ fun Sort.comparator(): SortComparator<*> = when (this.scalar.type) {
     ScalarType.Double -> createSortComparator<Double>(this)
     ScalarType.ShortString -> createSortComparator<String>(this)
     ScalarType.LongString -> createSortComparator<String>(this)
+    ScalarType.JSON -> throw exceptionBadRequest("No sorting exists for JSON objects.")
     ScalarType.Date -> createSortComparator<Date>(this)
     is ScalarType.Enum -> createSortComparator<String>(this)
 }

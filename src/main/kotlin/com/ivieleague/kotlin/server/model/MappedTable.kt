@@ -85,6 +85,10 @@ class MappedTable(val wraps: TableAccess) : TableAccess, Table {
         return wraps.get(transaction, id, innerRead(transaction, read))?.let { innerInstanceToOuter(transaction, it, read) }
     }
 
+    override fun gets(transaction: Transaction, ids: Collection<String>, read: Read): Map<String, Instance?> {
+        return wraps.gets(transaction, ids, innerRead(transaction, read)).mapValues { it.value?.let { innerInstanceToOuter(transaction, it, read) } }
+    }
+
     override fun query(transaction: Transaction, read: Read): List<Instance> {
         return wraps.query(transaction, innerRead(transaction, read)).map { innerInstanceToOuter(transaction, it, read) }
     }

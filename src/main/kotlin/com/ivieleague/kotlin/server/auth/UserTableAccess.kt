@@ -38,6 +38,14 @@ class UserTableAccess(val wraps: TableAccess, val tokenInformation: TokenInforma
         return instance
     }
 
+    override fun gets(transaction: Transaction, ids: Collection<String>, read: Read): Map<String, Instance?> {
+        val isReadingToken = read.scalars.remove(token)
+        val result = wraps.gets(transaction, ids, read)
+        if (isReadingToken)
+            result.values.forEach { it?.let { it.scalars[token] = tokenInformation.token(it.id) } }
+        return result
+    }
+
     override fun query(transaction: Transaction, read: Read): Collection<Instance> {
         val isReadingToken = read.scalars.remove(token)
         return wraps.query(transaction, read).also {

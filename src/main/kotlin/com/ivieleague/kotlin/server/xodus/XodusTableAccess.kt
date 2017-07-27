@@ -193,8 +193,13 @@ class XodusTableAccess(
         return try {
             it.getEntity(it.toEntityId(id)).toInstance(it, read)
         } catch(e: EntityRemovedInDatabaseException) {
-            throw IllegalArgumentException("ID not found")
+            null
         }
+    }
+
+    override fun gets(transaction: Transaction, ids: Collection<String>, read: Read): Map<String, Instance?> {
+        val txn = transaction.getXodus(entityStore)
+        return ids.associate { id -> id to txn.getEntity(txn.toEntityId(id)).toInstance(txn, read) }
     }
 
     override fun query(transaction: Transaction, read: Read): List<Instance> {

@@ -82,6 +82,20 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
             throw exceptionForbidden("You can't read this because you don't have permission to access this row")
     }
 
+    override fun gets(transaction: Transaction, ids: Collection<String>, read: Read): Map<String, Instance?> {
+        val readCondition = table.readPermission(transaction.user)
+        readCondition.dependencies(read)
+        val result = wraps.gets(transaction, ids, read)
+        return result.mapValues {
+            it.value?.let {
+                if (!readCondition.invoke(it)) throw exceptionForbidden("You can't read this because you don't have permission to access this row")
+                it.secureProperties(transaction)
+                it
+            }
+        }
+
+    }
+
     override fun query(transaction: Transaction, read: Read): Collection<Instance> {
         val readCondition = table.readPermission(transaction.user)
         readCondition.dependencies(read)
