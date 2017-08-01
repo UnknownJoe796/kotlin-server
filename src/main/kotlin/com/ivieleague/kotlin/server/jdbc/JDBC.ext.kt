@@ -1,9 +1,14 @@
 package com.ivieleague.kotlin.server.jdbc
 
+import com.ivieleague.kotlin.server.sql.SQLQuery
+import com.ivieleague.kotlin.server.sql.SQLTable
 import java.sql.Connection
 import java.sql.ResultSet
 import java.util.*
 import kotlin.NoSuchElementException
+
+fun Connection.query(query: SQLQuery): ResultSet = createStatement().executeQuery(query.toString())
+fun Connection.create(table: SQLTable): Boolean = createStatement().execute(table.toDefineString())
 
 fun ResultSet.asIterator() = object : Iterator<ResultSet> {
 
@@ -37,7 +42,7 @@ data class JDBCTableInformation(
         val selfReferencingColumnName: String,
         val refGeneration: String,
         val columnInformation: Collection<JDBCColumnInformation>,
-        val primaryKey: JDBCColumnInformation?
+        val primaryKeys: Collection<JDBCColumnInformation>
 )
 
 data class JDBCColumnInformation(
@@ -97,7 +102,7 @@ fun Connection.getTablesInformation(): List<JDBCTableInformation> {
                             isGeneratedColumn = it.getString(24) == "YES"
                     )
                 }.toList(),
-                primaryKey = metadata.getPrimaryKeys(catalog, schema, name).asIterator().asSequence().firstOrNull()?.let {
+                primaryKeys = metadata.getPrimaryKeys(catalog, schema, name).asIterator().asSequence().map {
                     JDBCColumnInformation(
                             name = it.getString(4),
                             type = it.getInt(5),
@@ -113,7 +118,7 @@ fun Connection.getTablesInformation(): List<JDBCTableInformation> {
                             isAutoIncrement = it.getString(23) == "YES",
                             isGeneratedColumn = it.getString(24) == "YES"
                     )
-                }//TODO: Close ResultSet
+                }.toList()//TODO: Close ResultSet
         )
     }.toList()
 }

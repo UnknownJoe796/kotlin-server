@@ -1,5 +1,7 @@
 package com.ivieleague.kotlin.server.model
 
+import com.ivieleague.kotlin.server.Fetcher
+
 /**
  *
  * Created by josep on 7/12/2017.

@@ -1,5 +1,6 @@
 package com.ivieleague.kotlin.server.xodus
 
+import com.ivieleague.kotlin.server.Fetcher
 import com.ivieleague.kotlin.server.model.*
 import jetbrains.exodus.entitystore.*
 import java.util.*

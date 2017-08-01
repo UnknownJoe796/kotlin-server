@@ -1,6 +1,6 @@
 package com.ivieleague.kotlin.server.xodus
 
-import com.ivieleague.kotlin.server.model.Fetcher
+import com.ivieleague.kotlin.server.Fetcher
 import com.ivieleague.kotlin.server.model.Schema
 import com.ivieleague.kotlin.server.model.Table
 import com.ivieleague.kotlin.server.model.TableAccess
