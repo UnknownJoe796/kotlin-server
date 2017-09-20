@@ -1,6 +1,7 @@
 package com.ivieleague.kotlin.server.model
 
-import com.lightningkite.kotlin.runAll
+import com.ivieleague.kotlin.server.Fetcher
+import com.lightningkite.kotlin.invokeAll
 
 /**
  * Represents a database transaction
@@ -8,6 +9,7 @@ import com.lightningkite.kotlin.runAll
  */
 class Transaction(
         val user: Instance? = null,
+        val tableAccesses: Fetcher<Table, TableAccess>,
         val readOnly: Boolean = false
 ) {
     val onCommit = ArrayList<() -> Unit>()
@@ -17,13 +19,13 @@ class Transaction(
     fun commit() {
         if (finished) return
         finished = true
-        onCommit.runAll()
+        onCommit.invokeAll()
     }
 
     fun fail() {
         if (finished) return
         finished = true
-        onFail.runAll()
+        onFail.invokeAll()
     }
 }
 

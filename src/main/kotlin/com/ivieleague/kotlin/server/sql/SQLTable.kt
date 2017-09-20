@@ -12,4 +12,9 @@ data class SQLTable(
     ${columns.joinToString { it.toDefineString() }}
     PRIMARY KEY (${primaryKey.joinToString { it.name }}
 );"""
+
+    fun toDefineIfNotExistsString(): String = """CREATE TABLE IF NOT EXISTS $name(
+    ${columns.joinToString { it.toDefineString() }}
+    PRIMARY KEY (${primaryKey.joinToString { it.name }}
+);"""
 }

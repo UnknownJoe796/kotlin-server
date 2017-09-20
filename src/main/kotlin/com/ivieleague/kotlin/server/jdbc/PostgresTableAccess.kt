@@ -5,31 +5,27 @@ import com.ivieleague.kotlin.server.JsonObjectMapper
 import com.ivieleague.kotlin.server.model.*
 import java.sql.Connection
 import java.sql.ResultSet
-
+import java.sql.SQLException
 
 class PostgresTableAccess(
-        override val connection: Connection,
+        val connection: Connection,
         val schema: String,
         override val table: Table,
         val tableAccesses: Fetcher<Table, TableAccess>
-) : TableAccess, SQLTableAccess {
-    fun jdbcToKotlin(result: ResultSet, scalar: Scalar, prepend: String = ""): Any? {
-        val type = scalar.type
-        val key = prepend + scalar.key
-        return when (type) {
-            ScalarType.Boolean -> result.getBoolean(key)
-            ScalarType.Byte -> result.getByte(key)
-            ScalarType.Short -> result.getShort(key)
-            ScalarType.Int -> result.getInt(key)
-            ScalarType.Long -> result.getLong(key)
-            ScalarType.Float -> result.getFloat(key)
-            ScalarType.Double -> result.getDouble(key)
-            ScalarType.ShortString -> result.getString(key)
-            ScalarType.LongString -> result.getString(key)
-            ScalarType.JSON -> JsonObjectMapper.readValue(result.getString(key), Any::class.java)
-            ScalarType.Date -> result.getDate(key)
-            is ScalarType.Enum -> type.enum[result.getByte(key)]
+) : TableAccess {
+
+    val sqlTable = table.toSql()
+    val sqlRelations = table.toMultilinkTablesSql()
+
+    init {
+        connection.createStatement().execute(sqlTable.toDefineIfNotExistsString())
+        for ((_, relationSql) in sqlRelations) {
+            connection.createStatement().execute(relationSql.toDefineIfNotExistsString())
         }
+    }
+
+    override fun get(transaction: Transaction, id: String, read: Read): Instance? {
+        return super.get(transaction, id, read)
     }
 
     override fun gets(transaction: Transaction, ids: Collection<String>, read: Read): Map<String, Instance?> {
@@ -48,32 +44,85 @@ class PostgresTableAccess(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    //convert table to sql
 
-    //    override fun get(table: Table, id: String, properties: Collection<Property>): Instance? {
-//        val result = connection.createStatement().executeQuery("SELECT id, ${properties.joinToString { it.name }} FROM ${table.tableName} WHERE id = ${id.toLong()}")
-//        if (!result.next()) return null
-//        return Instance(table, id, properties.associate {
-//            it to jdbcToKotlin(it, result)
-//        })
-//    }
-//
-//    override fun set(table: Table, id: String?, inProperties: Map<Property, Any?>, outProperties: Collection<Property>): Instance {
-//        if (id != null) {
-//            connection.createStatement().executeUpdate("UPDATE ${table.tableName} SET ${inProperties.entries.joinToString {
-//                val type = it.key.type
-//                it.key.name + " = " + mapFromKotlin(it.key, it.value)
-//            }} WHERE id = ${id.toLong()};")
-//            return get(table, id, outProperties)!!
-//        } else {
-//            val properties = inProperties.toList()
-//            val statement = connection.createStatement()
-//            statement.executeUpdate("INSERT INTO ${table.tableName} (${properties.joinToString { it.first.name }}) VALUES (${properties.joinToString {
-//                mapFromKotlin(it.first, it.second)
-//            }});")
-//            val generatedKeys = statement.generatedKeys
-//            generatedKeys.next()
-//            return get(table, generatedKeys.getInt("id").toString(), outProperties)!!
-//        }
-//    }
+    //convert read to sql - only one layer deep
 
+    //convert write to sql - only one layer deep
+
+
+    //convert ResultSet to instances
+    fun ResultSet.readScalar(scalar: Scalar): Any? {
+        val type = scalar.type
+        val key = scalar.key
+        return when (type) {
+            ScalarType.Boolean -> getBoolean(key)
+            ScalarType.Byte -> getByte(key)
+            ScalarType.Short -> getShort(key)
+            ScalarType.Int -> getInt(key)
+            ScalarType.Long -> getLong(key)
+            ScalarType.Float -> getFloat(key)
+            ScalarType.Double -> getDouble(key)
+            ScalarType.ShortString -> getString(key)
+            ScalarType.LongString -> getString(key)
+            ScalarType.JSON -> JsonObjectMapper.readValue(getString(key), Any::class.java)
+            ScalarType.Date -> getDate(key)
+            is ScalarType.Enum -> type.enum[getByte(key)]
+        }
+    }
+
+    fun ResultSet.toInstances(transaction: Transaction, read: Read): Map<String, Instance?> {
+        val instances = HashMap<String, Instance?>()
+        val links = HashMap<Link, HashMap<Instance, String>>()
+        while (next()) {
+            try {
+                val id = this.getLong("_id").toString()
+                val result = Instance(table, id)
+                for (scalar in read.scalars) {
+                    result.scalars[scalar] = try {
+                        this.readScalar(scalar)
+                    } catch (e: SQLException) {
+                        e.printStackTrace()
+                    }
+                }
+                for ((link, _) in read.links) {
+                    val linkId = try {
+                        getString(link.key)
+                    } catch (e: SQLException) {
+                        e.printStackTrace()
+                        null
+                    }
+                    if (linkId != null) {
+                        links.getOrPut(link) { HashMap() }[result] = linkId
+                    }
+                }
+                instances[id] = result
+
+            } catch (e: SQLException) {
+                e.printStackTrace()
+            }
+        }
+
+        for ((link, subread) in read.links) {
+            TableAccessCommon.deferPopulateLinks(transaction, link, transaction.tableAccesses[link.table], subread, links[link]!!)
+        }
+
+        for ((multilink, subread) in read.multilinks) {
+            val multilinkTableName = table.tableName + "_" + multilink.key
+            //TODO: Transactions
+            val resultSet = connection.createStatement().executeQuery("SELECT owner, owned FROM $multilinkTableName WHERE owner IN (${instances.keys.joinToString(",")})")
+            val idsMap = HashMap<Instance, ArrayList<String>>()
+            while (resultSet.next()) {
+                val owner = resultSet.getLong("owner").toString()
+                val owned = resultSet.getLong("owned").toString()
+                val instance = instances[owner]
+                if (instance != null) {
+                    idsMap.getOrPut(instance) { ArrayList() }.add(owned)
+                }
+            }
+            TableAccessCommon.deferPopulateMultilinks(transaction, multilink, transaction.tableAccesses[multilink.table], subread, idsMap)
+        }
+
+        return instances
+    }
 }

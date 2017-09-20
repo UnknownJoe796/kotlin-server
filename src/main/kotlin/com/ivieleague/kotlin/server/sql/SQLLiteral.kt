@@ -28,6 +28,10 @@ sealed class SQLLiteral : SQLExpression {
 
         override fun toString(): String = "E'$escaped'"
     }
+
+    class LList(val values: List<SQLLiteral>) : SQLLiteral() {
+        override fun toString(): String = values.joinToString(",", "(", ")")
+    }
 }
 
 fun Any?.toSQLLiteral(): SQLLiteral = when (this) {
