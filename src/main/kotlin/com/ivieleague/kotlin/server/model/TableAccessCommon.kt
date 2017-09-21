@@ -19,4 +19,6 @@ object TableAccessCommon {
             instance.multilinks[property] = foreignIds.mapNotNull { results[it] }
         }
     }
+
+//    fun deferWriteLinks(transaction: Transaction, property: Link, otherAccess: TableAccess, write:WriteResult):WriteResult
 }

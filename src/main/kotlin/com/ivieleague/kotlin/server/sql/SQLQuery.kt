@@ -4,8 +4,8 @@ data class SQLQuery(
         val select: Collection<SQLResultColumn>,
         val from: Collection<SQLDataSourceAccess>,
         val join: List<Join>,
-        val where: SQLCondition,
-        val orderBy: List<SQLResultColumn>
+        val where: SQLCondition?,
+        val orderBy: List<SQLResultColumn>?
 ) : SQLDataSource {
 
     class Join(
@@ -23,7 +23,7 @@ data class SQLQuery(
     override fun toString(): String = """
 SELECT ${select.joinToString { it.toDefineString() }}
 FROM ${from.joinToString { it.toDefineString() }}
-WHERE $where
+${if (where != null) "WHERE $where" else ""}
 ${join.joinToString("\n")}
-ORDER BY ${orderBy.joinToString()}"""
+${if (orderBy != null) "ORDER BY ${orderBy.joinToString()}" else ""}"""
 }

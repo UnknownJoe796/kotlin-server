@@ -9,6 +9,7 @@ import kotlin.NoSuchElementException
 
 fun Connection.query(query: SQLQuery): ResultSet = createStatement().executeQuery(query.toString())
 fun Connection.create(table: SQLTable): Boolean = createStatement().execute(table.toDefineString())
+fun Connection.createIfNotExists(table: SQLTable): Boolean = createStatement().execute(table.toDefineIfNotExistsString())
 
 fun ResultSet.asIterator() = object : Iterator<ResultSet> {
 

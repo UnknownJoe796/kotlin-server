@@ -110,7 +110,7 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
         }
     }
 
-    override fun update(transaction: Transaction, write: Write): Instance {
+    override fun update(transaction: Transaction, write: Write): WriteResult {
         val writeBeforeCondition = table.writeBeforePermission(transaction.user)
         val writeAfterCondition = table.writeAfterPermission(transaction.user)
         if (writeAfterCondition != Condition.Always) {

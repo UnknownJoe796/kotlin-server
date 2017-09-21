@@ -57,7 +57,7 @@ class UserTableAccess(val wraps: TableAccess, val tokenInformation: TokenInforma
         }
     }
 
-    override fun update(transaction: Transaction, write: Write): Instance {
+    override fun update(transaction: Transaction, write: Write): WriteResult {
         val password = write.scalars.remove(password)
         if (password != null) {
             val salt = BCrypt.gensalt()

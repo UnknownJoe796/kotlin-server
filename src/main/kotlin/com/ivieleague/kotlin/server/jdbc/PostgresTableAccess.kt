@@ -1,8 +1,8 @@
 package com.ivieleague.kotlin.server.jdbc
 
-import com.ivieleague.kotlin.server.Fetcher
 import com.ivieleague.kotlin.server.JsonObjectMapper
 import com.ivieleague.kotlin.server.model.*
+import com.ivieleague.kotlin.server.sql.*
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
@@ -10,17 +10,23 @@ import java.sql.SQLException
 class PostgresTableAccess(
         val connection: Connection,
         val schema: String,
-        override val table: Table,
-        val tableAccesses: Fetcher<Table, TableAccess>
+        override val table: Table
 ) : TableAccess {
 
-    val sqlTable = table.toSql()
-    val sqlRelations = table.toMultilinkTablesSql()
+    val sqlScalars = table.scalars.associate { it to it.toSql() }
+    val sqlLinks = table.links.associate { it to it.toSql() }
+    val sqlMultilinks = table.multilinks.associate { it to it.toSql(table.tableName) }
+    val sqlTable = SQLTable(
+            name = table.tableName,
+            description = table.tableDescription,
+            columns = listOf(StandardPrimaryKey) + sqlScalars.values + sqlLinks.values,
+            primaryKey = listOf(StandardPrimaryKey)
+    )
 
     init {
-        connection.createStatement().execute(sqlTable.toDefineIfNotExistsString())
-        for ((_, relationSql) in sqlRelations) {
-            connection.createStatement().execute(relationSql.toDefineIfNotExistsString())
+        connection.createIfNotExists(sqlTable)
+        for ((_, relationSql) in sqlMultilinks) {
+            connection.createIfNotExists(relationSql)
         }
     }
 
@@ -44,17 +50,56 @@ class PostgresTableAccess(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    //convert table to sql
-
     //convert read to sql - only one layer deep
 
     //convert write to sql - only one layer deep
+    fun Write.toSql(pastLayers: Map<Link, Instance?>): SQLUpsert {
+        return SQLUpsert(
+                sqlTable,
+                (this.id?.toLong()?.let { mapOf(StandardPrimaryKey to SQLLiteral.LInteger(it)) } ?: mapOf()) +
+                        this.scalars.entries.associate { sqlScalars[it.key]!! to it.value.toSQLLiteral() } +
+                        pastLayers.entries.associate { sqlLinks[it.key]!! to it.value?.id.toSQLLiteral() }
+        )
+    }
+
+    fun Write.handleMultilink(id: Long, transaction: Transaction) {
+        this.multilinks.forEach { (multilink, modifications) ->
+            val sqlTable = sqlMultilinks[multilink]!!
+
+            //Handle replacements
+            val replacements = modifications.replacements
+            if (replacements != null) {
+                SQLDelete(
+                        table = sqlTable,
+                        where = SQLCondition.Equal(SQLDirectColumn(StandardOwnerKey), SQLLiteral.LInteger(id))
+                )
+            }
+
+            //Handle additions
+
+            //Handle removals
+
+        }
+        val table = sqlMultilinks[multilink]!!
+        val inserts = instances.flatMap { instance ->
+            instance.multilinks.map {
+                val otherResult = transaction.tableAccesses[it.key.table].update()
+                SQLInsert(
+                        table = table,
+                        values = mapOf(
+                                StandardOwnerKey to SQLLiteral.LInteger(instance.id.toLong()),
+                                StandardOwnedKey to SQLLiteral.LString(it)
+                        )
+                )
+            }
+        }
+    }
 
 
     //convert ResultSet to instances
     fun ResultSet.readScalar(scalar: Scalar): Any? {
         val type = scalar.type
-        val key = scalar.key
+        val key = sqlScalars[scalar]!!.toString()
         return when (type) {
             ScalarType.Boolean -> getBoolean(key)
             ScalarType.Byte -> getByte(key)
@@ -87,7 +132,7 @@ class PostgresTableAccess(
                 }
                 for ((link, _) in read.links) {
                     val linkId = try {
-                        getString(link.key)
+                        getString(sqlLinks[link]!!.toString())
                     } catch (e: SQLException) {
                         e.printStackTrace()
                         null
@@ -108,13 +153,24 @@ class PostgresTableAccess(
         }
 
         for ((multilink, subread) in read.multilinks) {
-            val multilinkTableName = table.tableName + "_" + multilink.key
             //TODO: Transactions
-            val resultSet = connection.createStatement().executeQuery("SELECT owner, owned FROM $multilinkTableName WHERE owner IN (${instances.keys.joinToString(",")})")
+
+            val source = SQLDataSourceAccess(sqlMultilinks[multilink]!!, "multilink")
+            val ownerKey = SQLResultColumn(source, StandardOwnerKey)
+            val ownedKey = SQLResultColumn(source, StandardOwnedKey)
+            val query = SQLQuery(
+                    listOf(ownerKey, ownedKey),
+                    listOf(source),
+                    listOf(),
+                    SQLCondition.In(ownerKey, SQLLiteral.LList(instances.keys.mapNotNull { it.toLongOrNull()?.let { SQLLiteral.LInteger(it) } })),
+                    listOf()
+            )
+
+            val resultSet = connection.query(query)
             val idsMap = HashMap<Instance, ArrayList<String>>()
             while (resultSet.next()) {
-                val owner = resultSet.getLong("owner").toString()
-                val owned = resultSet.getLong("owned").toString()
+                val owner = resultSet.getLong(ownerKey.toString()).toString()
+                val owned = resultSet.getString(ownedKey.toString())
                 val instance = instances[owner]
                 if (instance != null) {
                     idsMap.getOrPut(instance) { ArrayList() }.add(owned)

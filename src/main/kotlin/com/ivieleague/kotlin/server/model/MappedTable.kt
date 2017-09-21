@@ -93,7 +93,7 @@ class MappedTable(val wraps: TableAccess) : TableAccess, Table {
         return wraps.query(transaction, innerRead(transaction, read)).map { innerInstanceToOuter(transaction, it, read) }
     }
 
-    override fun update(transaction: Transaction, write: Write): Instance {
+    override fun update(transaction: Transaction, write: Write): WriteResult {
         return wraps.update(transaction, innerWrite(transaction, write))
     }
 

@@ -10,7 +10,8 @@ import com.lightningkite.kotlin.invokeAll
 class Transaction(
         val user: Instance? = null,
         val tableAccesses: Fetcher<Table, TableAccess>,
-        val readOnly: Boolean = false
+        val readOnly: Boolean = false,
+        val required: Boolean = false
 ) {
     val onCommit = ArrayList<() -> Unit>()
     val onFail = ArrayList<() -> Unit>()

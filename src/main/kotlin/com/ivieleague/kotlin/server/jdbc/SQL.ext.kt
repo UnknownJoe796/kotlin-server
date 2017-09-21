@@ -5,6 +5,28 @@ import com.ivieleague.kotlin.server.sql.SQLColumn
 import com.ivieleague.kotlin.server.sql.SQLDataType
 import com.ivieleague.kotlin.server.sql.SQLTable
 
+
+val StandardPrimaryKey = SQLColumn(
+        "_id",
+        "The unique ID of this item",
+        SQLDataType.SQLIntSerial,
+        modifiers = listOf(
+                SQLColumn.Modifier.PrimaryKey
+        )
+)
+val StandardOwnerKey = SQLColumn(
+        "owner",
+        "The owner of this relationship",
+        type = SQLDataType.SQLLong,
+        modifiers = listOf()
+)
+val StandardOwnedKey = SQLColumn(
+        "owned",
+        "The thing owned through this relationship",
+        type = SQLDataType.SQLVarchar(255),
+        modifiers = listOf()
+)
+
 fun ScalarType.toSql(): SQLDataType = when (this) {
     ScalarType.Boolean -> SQLDataType.SQLBool
     ScalarType.Byte -> SQLDataType.SQLShort
@@ -37,20 +59,7 @@ fun Link.toSql(): SQLColumn {
 }
 
 fun Multilink.toSql(prefix: String): SQLTable {
-    val columns = listOf(
-            SQLColumn(
-                    "owner",
-                    "The owner of this relationship",
-                    type = SQLDataType.SQLVarchar(255),
-                    modifiers = listOf()
-            ),
-            SQLColumn(
-                    "owned",
-                    "The thing owned through this relationship",
-                    type = SQLDataType.SQLVarchar(255),
-                    modifiers = listOf()
-            )
-    )
+    val columns = listOf(StandardOwnedKey, StandardOwnedKey)
     return SQLTable(
             name = "${prefix}_${this.key}",
             description = this.description,
@@ -58,15 +67,6 @@ fun Multilink.toSql(prefix: String): SQLTable {
             primaryKey = columns
     )
 }
-
-val StandardPrimaryKey = SQLColumn(
-        "_id",
-        "The unique ID of this item",
-        SQLDataType.SQLIntSerial,
-        modifiers = listOf(
-                SQLColumn.Modifier.PrimaryKey
-        )
-)
 
 fun Table.toSql() = SQLTable(
         name = tableName,
