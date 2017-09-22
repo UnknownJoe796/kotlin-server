@@ -55,6 +55,7 @@ sealed class Condition {
         override fun invoke(write: Write): Boolean = get(path, write)?.scalars?.get(scalar) != value
     }
 
+    @Suppress("UNCHECKED_CAST")
     data class ScalarBetween<T : Comparable<T>>(val path: List<Link> = listOf(), val scalar: Scalar, val lower: T, val upper: T) : Condition() {
         override fun dependencies(modify: Read) = getScalarDependencies(path, scalar, modify)
         override fun invoke(instance: Instance): Boolean = (get(path, instance)?.scalars?.get(scalar) as T) in (lower..upper)

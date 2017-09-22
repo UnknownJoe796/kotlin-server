@@ -7,5 +7,4 @@ interface TableAccess {
     fun gets(transaction: Transaction, ids: Collection<String>, read: Read): Map<String, Instance?>
     fun query(transaction: Transaction, read: Read): Collection<Instance>
     fun update(transaction: Transaction, write: Write): WriteResult
-    fun delete(transaction: Transaction, id: String): Boolean
 }

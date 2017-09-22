@@ -66,8 +66,6 @@ class UserTableAccess(val wraps: TableAccess, val tokenInformation: TokenInforma
         return wraps.update(transaction, write)
     }
 
-    override fun delete(transaction: Transaction, id: String): Boolean = wraps.delete(transaction, id)
-
     fun login(usernameScalar: Scalar, username: String, password: String, read: Read = table.defaultRead()): Instance {
         val isReadingToken = read.scalars.remove(token)
         read.scalars += wrapsTable.hash

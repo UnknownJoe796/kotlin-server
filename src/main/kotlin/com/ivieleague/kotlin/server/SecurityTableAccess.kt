@@ -132,16 +132,4 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
         write.secureProperties(transaction)
         return wraps.update(transaction, write)
     }
-
-    override fun delete(transaction: Transaction, id: String): Boolean {
-        val writeBeforeCondition = table.writeBeforePermission(transaction.user)
-        if (writeBeforeCondition != Condition.Always) {
-            val read = Read().apply { writeBeforeCondition.dependencies(this) }
-            val existing = get(transaction, id, read)
-            if (existing != null)
-                if (!writeBeforeCondition.invoke(existing))
-                    throw exceptionForbidden("You can't delete this because you don't have permission to modify this row")
-        }
-        return wraps.delete(transaction, id)
-    }
 }

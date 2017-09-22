@@ -97,10 +97,6 @@ class MappedTable(val wraps: TableAccess) : TableAccess, Table {
         return wraps.update(transaction, innerWrite(transaction, write))
     }
 
-    override fun delete(transaction: Transaction, id: String): Boolean {
-        return wraps.delete(transaction, id)
-    }
-
 
     //Do actions
 
