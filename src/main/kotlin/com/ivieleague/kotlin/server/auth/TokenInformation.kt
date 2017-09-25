@@ -6,10 +6,7 @@ import com.auth0.jwt.exceptions.JWTVerificationException
 import com.auth0.jwt.exceptions.TokenExpiredException
 import com.ivieleague.kotlin.server.exceptionBadRequest
 import com.ivieleague.kotlin.server.exceptionUnauthorized
-import com.ivieleague.kotlin.server.model.Instance
-import com.ivieleague.kotlin.server.model.Read
-import com.ivieleague.kotlin.server.model.TableAccess
-import com.ivieleague.kotlin.server.model.Transaction
+import com.ivieleague.kotlin.server.model.*
 import java.util.*
 
 data class TokenInformation(
@@ -28,7 +25,7 @@ data class TokenInformation(
             .withClaim("user_id", userId)
             .sign(algorithm)
 
-    fun getUser(tableAccess: TableAccess, token: String, read: Read): Instance {
+    fun getUser(tableAccess: TableAccess, schema: Schema, token: String, read: Read): Instance {
         val id = try {
             verifier
                     .verify(token)
@@ -39,6 +36,9 @@ data class TokenInformation(
         } catch(e: JWTVerificationException) {
             throw exceptionBadRequest("The token could not be parsed properly")
         }
-        return tableAccess.get(Transaction(readOnly = true, user = Instance(tableAccess.table, id)), id, read) ?: throw exceptionBadRequest("Token indicates a user that does not exist")
+        Transaction(readOnly = true, user = Instance(tableAccess.table, id), tableAccesses = schema).use { txn ->
+            return tableAccess.get(txn, id, read) ?: throw exceptionBadRequest("Token indicates a user that does not exist")
+        }
+        throw Exception("The token could not be parsed properly")
     }
 }

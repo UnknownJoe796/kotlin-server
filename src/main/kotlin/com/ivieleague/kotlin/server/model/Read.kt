@@ -34,5 +34,19 @@ class Read(
         }
     }
 
+    fun sortCondition(): Condition? {
+        val startAfter = startAfter ?: return null
+        return Condition.AnyConditions(sort.indices.map { index ->
+            val equalConditions = sort.subList(0, index + 1).dropLast(1).map { Condition.ScalarEqual(scalar = it.scalar, value = startAfter) }
+            val currentSort = sort[index]
+            val compareCondition = if (currentSort.ascending) {
+                Condition.ScalarGreaterThan(scalar = currentSort.scalar, lower = startAfter.scalars[currentSort.scalar] as Comparable<Comparable<*>>)
+            } else {
+                Condition.ScalarLessThan(scalar = currentSort.scalar, upper = startAfter.scalars[currentSort.scalar] as Comparable<Comparable<*>>)
+            }
+            Condition.AllConditions(equalConditions + compareCondition)
+        })
+    }
+
     fun isEmpty(): Boolean = scalars.isEmpty() && links.isEmpty() && multilinks.isEmpty()
 }

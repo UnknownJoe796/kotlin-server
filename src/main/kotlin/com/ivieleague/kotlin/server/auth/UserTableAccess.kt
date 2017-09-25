@@ -66,14 +66,14 @@ class UserTableAccess(val wraps: TableAccess, val tokenInformation: TokenInforma
         return wraps.update(transaction, write)
     }
 
-    fun login(usernameScalar: Scalar, username: String, password: String, read: Read = table.defaultRead()): Instance {
+    fun login(schema: Schema, usernameScalar: Scalar, username: String, password: String, read: Read = table.defaultRead()): Instance {
         val isReadingToken = read.scalars.remove(token)
         read.scalars += wrapsTable.hash
         read.condition = Condition.ScalarEqual(scalar = usernameScalar, value = username)
-        val transaction = Transaction()
-        val instance = wraps.query(transaction, read = read)
-                .firstOrNull() ?: throw exceptionNotFound("Username and password combination not found")
-        transaction.commit()
+        val instance = Transaction(null, tableAccesses = schema).use { txn ->
+            wraps.query(txn, read = read)
+                    .firstOrNull() ?: throw exceptionNotFound("Username and password combination not found")
+        }
         val hash = instance.scalars.remove(wrapsTable.hash).toString()
         val passes = BCrypt.checkpw(password, hash)
         if (!passes) throw exceptionNotFound("Username and password combination not found")

@@ -9,6 +9,69 @@ class XodusTableAccess(
         override val table: Table
 ) : TableAccess {
 
+    fun Iterable<Entity>.toIntancesBatch(transaction: Transaction, txn: StoreTransaction, read: Read): List<Instance> {
+        val neededSubreads = HashMap<Link, ArrayList<Pair<Instance, String>>>()
+        val neededMultiSubreads = HashMap<Multilink, ArrayList<Pair<Instance, List<String>>>>()
+        val instances = this.map { entity ->
+            val instance = Instance(
+                    table,
+                    id = entity.id.toString(),
+                    scalars = read.scalars.associate { scalar -> scalar to entity.getProperty(scalar.key) }.toMutableMap()
+            )
+            read.links.forEach { (link, _) ->
+                val linkedId = entity.getProperty(link.key) as? String
+                if (linkedId != null) {
+                    neededSubreads.getOrPut(link) { ArrayList() } += instance to linkedId
+                } else {
+                    instance.links[link] = null
+                }
+            }
+            read.multilinks.forEach { (multilink, read) ->
+                val linkedId = entity.getProperty(multilink.key) as? String
+                if (linkedId != null) {
+                    neededMultiSubreads.getOrPut(multilink) { ArrayList() } += instance to linkedId.split(',')
+                }
+            }
+            instance
+        }
+        for ((link, list) in neededSubreads) {
+            val getsResult = transaction.tableAccesses[link.table].gets(transaction, list.map { it.second }, read.links[link]!!)
+            for ((instance, sid) in list) {
+                instance.links[link] = getsResult[sid]
+            }
+        }
+        for ((multilink, list) in neededMultiSubreads) {
+            val getsResult = transaction.tableAccesses[multilink.table].gets(transaction, list.flatMap { it.second }, read.multilinks[multilink]!!)
+            for ((instance, sids) in list) {
+                instance.multilinks[multilink] = sids.mapNotNull { getsResult[it] }
+            }
+        }
+        return instances
+    }
+
+    fun Entity.toInstance(transaction: Transaction, txn: StoreTransaction, read: Read): Instance {
+        val instance = Instance(
+                table,
+                id = this.id.toString(),
+                scalars = read.scalars.associate { scalar -> scalar to this.getProperty(scalar.key) }.toMutableMap()
+        )
+        read.links.forEach { (link, subread) ->
+            val linkedId = this.getProperty(link.key) as? String
+            if (linkedId != null) {
+                instance.links[link] = transaction.tableAccesses[link.table].get(transaction, linkedId, subread)
+            } else {
+                instance.links[link] = null
+            }
+        }
+        read.multilinks.forEach { (multilink, subread) ->
+            val linkedIds = (this.getProperty(multilink.key) as? String)?.split(',')
+            if (linkedIds != null) {
+                instance.multilinks[multilink] = transaction.tableAccesses[multilink.table].gets(transaction, linkedIds, subread).values.filterNotNull()
+            }
+        }
+        return instance
+    }
+
     override fun gets(transaction: Transaction, ids: Collection<String>, read: Read): Map<String, Instance?> {
         val txn = transaction.getXodus(entityStore)
         val neededSubreads = HashMap<Link, ArrayList<Pair<Instance, String>>>()
@@ -54,38 +117,124 @@ class XodusTableAccess(
         return instances
     }
 
-    fun Condition.toEntityIterable(txn: StoreTransaction): EntityIterable = when (this) {
-        Condition.Always -> txn.getAll(table.tableName)
-        Condition.Never -> txn.find(table.tableName, "__does_not_exist__", 0)
-        is Condition.AllConditions -> TODO()
-        is Condition.AnyConditions -> TODO()
-        is Condition.ScalarEqual -> txn.find(table.tableName, this.scalar.key, this.value as Comparable<*>)
-        is Condition.ScalarNotEqual -> txn.getAll(table.tableName).
-        is Condition.ScalarBetween<*> -> txn.find(table.tableName, this.scalar.key, this.lower, this.upper)
-        is Condition.IdEquals -> TODO()
-        is Condition.MultilinkContains -> TODO()
-        is Condition.MultilinkDoesNotContain -> TODO()
+    fun Condition.slowDefault(transaction: Transaction, txn: StoreTransaction, read: Read): Sequence<Instance> {
+        return txn.getAll(table.tableName)
+                .asSequence()
+                .map { it.toInstance(transaction, txn, read) }
+                .filter { instance -> invoke(instance) }
     }
 
-    fun EntityIterable.applyCondition(condition: Condition): EntityIterable {
-        return when (condition) {
-            Condition.Always -> this
-            Condition.Never -> this.
-            is Condition.AllConditions -> TODO()
-            is Condition.AnyConditions -> TODO()
-            is Condition.ScalarEqual -> TODO()
-            is Condition.ScalarNotEqual -> TODO()
-            is Condition.ScalarBetween -> TODO()
-            is Condition.IdEquals -> TODO()
-            is Condition.MultilinkContains -> TODO()
-            is Condition.MultilinkDoesNotContain -> TODO()
+    //Possible return types: EntityIterable, Sequence<Instance>
+    fun Condition.tryXodusIterable(transaction: Transaction, txn: StoreTransaction, read: Read): Any? = when (this) {
+        Condition.Always -> txn.getAll(table.tableName)
+        Condition.Never -> txn.find(table.tableName, "__does_not_exist__", 0)
+        is Condition.AllConditions -> {
+            val xodusIterables = ArrayList<EntityIterable>()
+            val others = ArrayList<Condition>()
+            for (condition in this.conditions) {
+                val attemptedXodus = condition.tryXodusIterable(transaction, txn, read)
+                if (attemptedXodus is EntityIterable) xodusIterables += attemptedXodus
+                else others += condition
+            }
+            val xodusBase = if (xodusIterables.isNotEmpty()) xodusIterables.reduce { a, b -> a.intersect(b) } else txn.getAll(table.tableName)
+            if (others.isEmpty()) {
+                xodusBase
+            } else
+                xodusBase
+                        .asSequence()
+                        .map { it.toInstance(transaction, txn, read) }
+                        .filter { instance -> others.any { it.invoke(instance) } }
+        }
+        is Condition.AnyConditions -> {
+            val xodusIterables = ArrayList<EntityIterable>()
+            val others = ArrayList<Condition>()
+            for (condition in this.conditions) {
+                val attemptedXodus = condition.tryXodusIterable(transaction, txn, read)
+                if (attemptedXodus is EntityIterable) xodusIterables += attemptedXodus
+                else others += condition
+            }
+            val xodusBase = if (xodusIterables.isNotEmpty()) xodusIterables.reduce { a, b -> a.union(b) } else txn.getAll(table.tableName)
+            if (others.isEmpty()) {
+                xodusBase
+            } else
+                xodusBase
+                        .asSequence()
+                        .map { it.toInstance(transaction, txn, read) }
+                        .filter { instance -> others.any { it.invoke(instance) } }
+        }
+        is Condition.ScalarEqual -> {
+            if (this.path.isEmpty())
+                txn.find(table.tableName, this.scalar.key, this.value as Comparable<*>)
+            else
+                slowDefault(transaction, txn, read)
+        }
+        is Condition.ScalarNotEqual -> {
+            if (this.path.isEmpty())
+                txn.getAll(table.tableName).minus(txn.find(table.tableName, this.scalar.key, this.value as Comparable<*>))
+            else
+                slowDefault(transaction, txn, read)
+        }
+        is Condition.ScalarBetween<*> -> {
+            if (this.path.isEmpty())
+                txn.find(table.tableName, this.scalar.key, this.lower, this.upper)
+            else
+                slowDefault(transaction, txn, read)
+        }
+//        is Condition.ScalarLessThanOrEqual<*> -> {
+//            if (this.path.isEmpty())
+//                txn.find(table.tableName, this.scalar.key, this.lower, this.upper)
+//            else
+//                slowDefault(transaction, txn, read)
+//        }
+//        is Condition.ScalarGreaterThanOrEqual<*> -> {
+//            if (this.path.isEmpty())
+//                txn.find(table.tableName, this.scalar.key, this.lower, this.upper)
+//            else
+//                slowDefault(transaction, txn, read)
+//        }
+//        is Condition.ScalarLessThan<*> -> {
+//            if (this.path.isEmpty())
+//                txn.find(table.tableName, this.scalar.key, this.lower, this.upper)
+//            else
+//                slowDefault(transaction, txn, read)
+//        }
+//        is Condition.ScalarGreaterThan<*> -> {
+//            if (this.path.isEmpty())
+//                txn.find(table.tableName, this.scalar.key, this.lower, this.upper)
+//            else
+//                slowDefault(transaction, txn, read)
+//        }
+        is Condition.MultilinkContains -> slowDefault(transaction, txn, read)
+        is Condition.MultilinkDoesNotContain -> slowDefault(transaction, txn, read)
+        is Condition.IdEquals -> {
+            if (this.path.isEmpty())
+                txn.findIds(table.tableName, txn.toEntityId(this.id).localId, txn.toEntityId(this.id).localId)
+            else
+                slowDefault(transaction, txn, read)
+        }
+        else -> slowDefault(transaction, txn, read)
+    }
+
+    fun Condition.query(transaction: Transaction, txn: StoreTransaction, read: Read): Sequence<Instance> {
+        val result = tryXodusIterable(transaction, txn, read)
+        return when (result) {
+            is Sequence<*> -> result as Sequence<Instance>
+            is EntityIterable -> result.asSequence().map { it.toInstance(transaction, txn, read) }
+            else -> {
+                throw IllegalArgumentException()
+            }
         }
     }
 
     override fun query(transaction: Transaction, read: Read): Collection<Instance> {
-        val txn = transaction.getXodus(entityStore)
-
-        txn.getAll(table.tableName)
+        val sortCondition = read.sortCondition()
+        val fullCondition = if (sortCondition != null) Condition.AllConditions(listOf(read.condition, sortCondition)) else read.condition
+        val result = fullCondition.query(transaction, transaction.getXodus(entityStore), read)
+        if (read.sort.isEmpty()) {
+            return result.take(read.count).toList()
+        } else {
+            return result.sortedWith(read.sort.instanceComparator()).take(read.count).toList()
+        }
     }
 
     override fun update(transaction: Transaction, write: Write): WriteResult {
@@ -104,6 +253,7 @@ class XodusTableAccess(
         doSubs(transaction, write, entity, writeResult)
         if (write.delete) {
             updateEntity(write, entity, writeResult)
+            txn.saveEntity(entity)
         } else {
             entity.delete()
         }
@@ -135,11 +285,11 @@ class XodusTableAccess(
 
             val removals = result.removals
             if (removals != null) {
-                val result = (entity.getProperty(multilink.key) as? String)
+                val resultingMultilink = (entity.getProperty(multilink.key) as? String)
                         ?.split(',')
                         ?.minus(removals.asSequence().map { it.id })
                         ?.joinToString(",")
-                if (result != null) entity.setProperty(multilink.key, result)
+                if (resultingMultilink != null) entity.setProperty(multilink.key, resultingMultilink)
             }
 
             val additions = result.additions

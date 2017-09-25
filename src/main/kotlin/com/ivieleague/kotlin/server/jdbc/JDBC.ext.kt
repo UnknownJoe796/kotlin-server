@@ -1,5 +1,6 @@
 package com.ivieleague.kotlin.server.jdbc
 
+import com.ivieleague.kotlin.server.sql.SQLExecutable
 import com.ivieleague.kotlin.server.sql.SQLQuery
 import com.ivieleague.kotlin.server.sql.SQLTable
 import java.sql.Connection
@@ -7,6 +8,7 @@ import java.sql.ResultSet
 import java.util.*
 import kotlin.NoSuchElementException
 
+fun Connection.execute(executable: SQLExecutable): Boolean = createStatement().execute(executable.toString())
 fun Connection.query(query: SQLQuery): ResultSet = createStatement().executeQuery(query.toString())
 fun Connection.create(table: SQLTable): Boolean = createStatement().execute(table.toDefineString())
 fun Connection.createIfNotExists(table: SQLTable): Boolean = createStatement().execute(table.toDefineIfNotExistsString())

@@ -4,7 +4,7 @@ data class SQLUpdate(
         val table: SQLTable,
         val values: Map<SQLColumn, SQLLiteral>,
         val where: SQLCondition
-) : SQLDataSource {
+) : SQLDataSource, SQLExecutable {
     override fun toString(): String {
         return """
 UPDATE ${table.name}

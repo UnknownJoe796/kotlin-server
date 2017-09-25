@@ -28,7 +28,6 @@ fun String.populate(data: Map<String, Any?>) = if (this.startsWith("\${") && thi
 fun Request<*>.populate(data: Map<String, Any?>) = when (this) {
     is Request.Get -> this.populate(data)
     is Request.Update -> this.populate(data)
-    is Request.Delete -> this.populate(data)
     is Request.Query -> this.populate(data)
 }
 
@@ -44,9 +43,6 @@ fun Request.Update.populate(data: Map<String, Any?>) {
     write.populate(data)
 }
 
-fun Request.Delete.populate(data: Map<String, Any?>) {
-    id = id.populate(data) as String
-}
 
 fun Write.populate(data: Map<String, Any?>) {
     id = id?.let { it.populate(data) as String }
@@ -84,6 +80,18 @@ fun Condition.populate(data: Map<String, Any?>): Condition {
         is Condition.ScalarBetween<*> -> Condition.ScalarBetween<Comparable<Any?>>(path, scalar,
                 if (lower is String) lower.populate(data) as Comparable<Any?> else lower as Comparable<Any?>,
                 if (upper is String) upper.populate(data) as Comparable<Any?> else upper as Comparable<Any?>
+        )
+        is Condition.ScalarLessThanOrEqual<*> -> Condition.ScalarLessThanOrEqual<Comparable<Any?>>(path, scalar,
+                if (upper is String) upper.populate(data) as Comparable<Any?> else upper as Comparable<Any?>
+        )
+        is Condition.ScalarGreaterThanOrEqual<*> -> Condition.ScalarGreaterThanOrEqual<Comparable<Any?>>(path, scalar,
+                if (lower is String) lower.populate(data) as Comparable<Any?> else lower as Comparable<Any?>
+        )
+        is Condition.ScalarLessThan<*> -> Condition.ScalarLessThan<Comparable<Any?>>(path, scalar,
+                if (upper is String) upper.populate(data) as Comparable<Any?> else upper as Comparable<Any?>
+        )
+        is Condition.ScalarGreaterThan<*> -> Condition.ScalarGreaterThan<Comparable<Any?>>(path, scalar,
+                if (lower is String) lower.populate(data) as Comparable<Any?> else lower as Comparable<Any?>
         )
         is Condition.IdEquals -> Condition.IdEquals(path, id.populate(data) as String)
         is Condition.MultilinkContains -> Condition.MultilinkContains(path, multilink, id.populate(data) as String)

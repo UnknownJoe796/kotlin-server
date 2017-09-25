@@ -11,7 +11,7 @@ fun Route.restNest(schema: Schema, userGetter: (ApplicationCall) -> Instance? = 
             val results = HashMap<String, Any?>()
             val result = try {
                 val raw = it.request.receiveJson<LinkedHashMap<String, Any?>>()!!
-                Transaction(userGetter.invoke(it)).use { txn ->
+                Transaction(userGetter.invoke(it), tableAccesses = schema).use { txn ->
                     raw.entries.asSequence()
                             .map { it.key to (it.value as LinkedHashMap<String, Any?>).toRequest(schema.nameToTable) }
                             .forEach {
@@ -33,12 +33,12 @@ fun Route.restNest(schema: Schema, userGetter: (ApplicationCall) -> Instance? = 
     }
     for (access in schema.accesses) {
         route(access.table.tableName) {
-            restNest(access, userGetter)
+            restNest(access, schema, userGetter)
         }
     }
 }
 
-fun Route.restNest(tableAccess: TableAccess, userGetter: (ApplicationCall) -> Instance? = { null }) {
+fun Route.restNest(tableAccess: TableAccess, schema: Schema, userGetter: (ApplicationCall) -> Instance? = { null }) {
     options("") {
         exceptionWrap {
             it.respondJson(tableAccess.table.toInfoMap(userGetter.invoke(it)))
@@ -46,7 +46,7 @@ fun Route.restNest(tableAccess: TableAccess, userGetter: (ApplicationCall) -> In
     }
     get("") {
         exceptionWrap {
-            Transaction(userGetter.invoke(it), readOnly = true).use { txn ->
+            Transaction(userGetter.invoke(it), tableAccesses = schema, readOnly = true).use { txn ->
                 val result = tableAccess.query(txn, tableAccess.table.defaultRead())
                 it.respondJson(result)
             }
@@ -54,7 +54,7 @@ fun Route.restNest(tableAccess: TableAccess, userGetter: (ApplicationCall) -> In
     }
     get("/{id}") {
         exceptionWrap {
-            Transaction(userGetter.invoke(it), readOnly = true).use { txn ->
+            Transaction(userGetter.invoke(it), tableAccesses = schema, readOnly = true).use { txn ->
                 val result = tableAccess.get(txn, call.parameters["id"]!!, tableAccess.table.defaultRead())
                 it.respondJson(result)
             }
@@ -67,7 +67,7 @@ fun Route.restNest(tableAccess: TableAccess, userGetter: (ApplicationCall) -> In
             } catch(e: Exception) {
                 throw exceptionBadRequest(e.message)
             }
-            Transaction(userGetter.invoke(it), readOnly = true).use { txn ->
+            Transaction(userGetter.invoke(it), tableAccesses = schema, readOnly = true).use { txn ->
                 val result = tableAccess.query(txn, request)
                 it.respondJson(result)
             }
@@ -80,7 +80,7 @@ fun Route.restNest(tableAccess: TableAccess, userGetter: (ApplicationCall) -> In
             } catch(e: Exception) {
                 throw exceptionBadRequest(e.message)
             }
-            Transaction(userGetter.invoke(it), readOnly = true).use { txn ->
+            Transaction(userGetter.invoke(it), tableAccesses = schema, readOnly = true).use { txn ->
                 val result = tableAccess.get(txn, call.parameters["id"]!!, request)
                 it.respondJson(result)
             }
@@ -93,7 +93,7 @@ fun Route.restNest(tableAccess: TableAccess, userGetter: (ApplicationCall) -> In
             } catch(e: Exception) {
                 throw exceptionBadRequest(e.message)
             }
-            Transaction(userGetter.invoke(it)).use { txn ->
+            Transaction(userGetter.invoke(it), tableAccesses = schema).use { txn ->
                 val result = tableAccess.update(txn, input)
                 it.respondJson(result)
             }
@@ -108,7 +108,7 @@ fun Route.restNest(tableAccess: TableAccess, userGetter: (ApplicationCall) -> In
             } catch(e: Exception) {
                 throw exceptionBadRequest(e.message)
             }
-            Transaction(userGetter.invoke(it)).use { txn ->
+            Transaction(userGetter.invoke(it), tableAccesses = schema).use { txn ->
                 val result = tableAccess.update(txn, input)
                 it.respondJson(result)
             }
@@ -116,13 +116,9 @@ fun Route.restNest(tableAccess: TableAccess, userGetter: (ApplicationCall) -> In
     }
     delete("/{id}") {
         exceptionWrap {
-            Transaction(userGetter.invoke(it)).use { txn ->
-                val result = tableAccess.delete(txn, call.parameters["id"]!!)
-                if (result) {
-                    it.respondJson(result)
-                } else {
-                    throw exceptionNotFound("Item with id ${call.parameters["id"]!!} was not found.")
-                }
+            Transaction(userGetter.invoke(it), tableAccesses = schema).use { txn ->
+                val result = tableAccess.update(txn, Write(id = call.parameters["id"]!!, delete = true))
+                it.respondJson(result)
             }
         }
     }

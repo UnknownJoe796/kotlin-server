@@ -3,7 +3,7 @@ package com.ivieleague.kotlin.server.sql
 data class SQLUpsert(
         val table: SQLTable,
         val values: Map<SQLColumn, SQLLiteral>
-) : SQLDataSource {
+) : SQLDataSource, SQLExecutable {
     override fun toString(): String {
         val entriesOrdered = values.entries.toList()
         return """

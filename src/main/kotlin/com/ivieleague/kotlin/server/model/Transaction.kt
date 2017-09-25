@@ -30,9 +30,10 @@ class Transaction(
     }
 }
 
-inline fun Transaction.use(action: (Transaction) -> Unit) = try {
-    action.invoke(this)
+inline fun <T> Transaction.use(action: (Transaction) -> T): T = try {
+    val result = action.invoke(this)
     commit()
+    result
 } finally {
     fail()
 }

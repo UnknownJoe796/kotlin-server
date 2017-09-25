@@ -6,7 +6,7 @@ data class SQLQuery(
         val join: List<Join>,
         val where: SQLCondition?,
         val orderBy: List<SQLResultColumn>?
-) : SQLDataSource {
+) : SQLDataSource, SQLExecutable {
 
     class Join(
             val type: Join.Type,

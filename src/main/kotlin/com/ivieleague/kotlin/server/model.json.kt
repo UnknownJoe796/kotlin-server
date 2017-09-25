@@ -19,6 +19,12 @@ object KotlinServerModelsModule : SimpleModule("KotlinServerModelsModule", Versi
                 else gen.writeNull()
             }
         })
+        addSerializer(object : StdSerializer<WriteResult>(WriteResult::class.java) {
+            override fun serialize(value: WriteResult?, gen: JsonGenerator, provider: SerializerProvider) {
+                if (value != null) gen.writeWriteResult(value)
+                else gen.writeNull()
+            }
+        })
     }
 }
 
@@ -50,6 +56,53 @@ fun JsonGenerator.writeInstance(instance: Instance) {
             writeInstance(value)
         }
         writeEndArray()
+    }
+    writeEndObject()
+}
+
+fun JsonGenerator.writeWriteResult(result: WriteResult) {
+    writeStartObject()
+    writeStringField("_id", result.id)
+    for ((link, value) in result.links) {
+        writeFieldName(link.key)
+        if (value == null) writeNull()
+        else writeWriteResult(value)
+    }
+    for ((multilink, values) in result.multilinks) {
+        writeFieldName(multilink.key)
+        writeStartObject()
+
+        val additions = values.additions
+        if (additions != null) {
+            writeFieldName("additions")
+            writeStartArray()
+            for (value in additions) {
+                writeWriteResult(value)
+            }
+            writeEndArray()
+        }
+
+        val removals = values.removals
+        if (removals != null) {
+            writeFieldName("additions")
+            writeStartArray()
+            for (value in removals) {
+                writeWriteResult(value)
+            }
+            writeEndArray()
+        }
+
+        val replacements = values.replacements
+        if (replacements != null) {
+            writeFieldName("additions")
+            writeStartArray()
+            for (value in replacements) {
+                writeWriteResult(value)
+            }
+            writeEndArray()
+        }
+
+        writeEndObject()
     }
     writeEndObject()
 }
@@ -110,6 +163,10 @@ fun Condition.toInfoMap(): Map<String, Any?> = when (this) {
     is Condition.ScalarEqual -> mapOf("type" to "scalarEqual", "path" to path.map { it.key }, "scalar" to scalar.key, "value" to value)
     is Condition.ScalarNotEqual -> mapOf("type" to "scalarNotEqual", "path" to path.map { it.key }, "scalar" to scalar.key, "value" to value)
     is Condition.ScalarBetween<*> -> mapOf("type" to "scalarBetween", "path" to path.map { it.key }, "scalar" to scalar.key, "lower" to lower, "upper" to upper)
+    is Condition.ScalarLessThanOrEqual<*> -> mapOf("type" to "scalarLessThanOrEqual", "path" to path.map { it.key }, "scalar" to scalar.key, "upper" to upper)
+    is Condition.ScalarGreaterThanOrEqual<*> -> mapOf("type" to "scalarGreaterThanOrEqual", "path" to path.map { it.key }, "scalar" to scalar.key, "lower" to lower)
+    is Condition.ScalarLessThan<*> -> mapOf("type" to "scalarLessThan", "path" to path.map { it.key }, "scalar" to scalar.key, "upper" to upper)
+    is Condition.ScalarGreaterThan<*> -> mapOf("type" to "scalarGreaterThan", "path" to path.map { it.key }, "scalar" to scalar.key, "lower" to lower)
     is Condition.IdEquals -> mapOf("type" to "idEquals", "path" to path.map { it.key }, "id" to id)
     is Condition.MultilinkContains -> mapOf("type" to "multilinkContains", "path" to path.map { it.key }, "multilink" to multilink.key, "id" to id)
     is Condition.MultilinkDoesNotContain -> mapOf("type" to "multilinkDoesNotContain", "path" to path.map { it.key }, "multilink" to multilink.key, "id" to id)
@@ -159,6 +216,54 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                 upper = this["upper"] as Comparable<Any>
         )
     }
+    "scalarlessthanorequal" -> {
+        var currentTable = table
+        Condition.ScalarLessThanOrEqual<Comparable<Any>>(
+                path = (this["path"] as? List<String>)?.asSequence()?.map {
+                    val link = currentTable.properties[it] as Link
+                    currentTable = link.table
+                    link
+                }?.toList() ?: listOf(),
+                scalar = currentTable.properties[this["scalar"] as String] as Scalar,
+                upper = this["upper"] as Comparable<Any>
+        )
+    }
+    "scalargreaterthanorequal" -> {
+        var currentTable = table
+        Condition.ScalarGreaterThanOrEqual<Comparable<Any>>(
+                path = (this["path"] as? List<String>)?.asSequence()?.map {
+                    val link = currentTable.properties[it] as Link
+                    currentTable = link.table
+                    link
+                }?.toList() ?: listOf(),
+                scalar = currentTable.properties[this["scalar"] as String] as Scalar,
+                lower = this["lower"] as Comparable<Any>
+        )
+    }
+    "scalarlessthan" -> {
+        var currentTable = table
+        Condition.ScalarLessThan<Comparable<Any>>(
+                path = (this["path"] as? List<String>)?.asSequence()?.map {
+                    val link = currentTable.properties[it] as Link
+                    currentTable = link.table
+                    link
+                }?.toList() ?: listOf(),
+                scalar = currentTable.properties[this["scalar"] as String] as Scalar,
+                upper = this["upper"] as Comparable<Any>
+        )
+    }
+    "scalargreaterthan" -> {
+        var currentTable = table
+        Condition.ScalarGreaterThan<Comparable<Any>>(
+                path = (this["path"] as? List<String>)?.asSequence()?.map {
+                    val link = currentTable.properties[it] as Link
+                    currentTable = link.table
+                    link
+                }?.toList() ?: listOf(),
+                scalar = currentTable.properties[this["scalar"] as String] as Scalar,
+                lower = this["lower"] as Comparable<Any>
+        )
+    }
     "idequals" -> {
         var currentTable = table
         Condition.IdEquals(
@@ -201,7 +306,6 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
 fun Map<String, Any?>.toRequest(tableMap: Map<String, Table>) = when (this["_request"]) {
     "get" -> toGetRequest(tableMap)
     "update" -> toUpdateRequest(tableMap)
-    "delete" -> toDeleteRequest(tableMap)
     "query" -> toQueryRequest(tableMap)
     else -> throw IllegalArgumentException()
 }
@@ -238,14 +342,6 @@ fun Map<String, Any?>.toUpdateRequest(tableMap: Map<String, Table>): Request.Upd
                 remove("_table")
                 remove("_request")
             }.toWrite(table)
-    )
-}
-
-fun Map<String, Any?>.toDeleteRequest(tableMap: Map<String, Table>): Request.Delete = (this["_table"] as String).let {
-    val table = tableMap[it] ?: throw IllegalArgumentException("Table '$it' not found")
-    Request.Delete(
-            table = table,
-            id = this["_id"] as String
     )
 }
 
@@ -353,7 +449,10 @@ fun Map<String, Any?>.toWrite(table: Table): Write {
             }
         }
     }
-    return Write(this["_id"]?.toString(), scalars, links, multilinks)
+    return Write(this["_id"]?.toString(), delete = this["_delete"].toBooleanDefaultFalse(), scalars = scalars, links = links, multilinks = multilinks)
 }
+
+private fun Any?.toBooleanDefaultTrue(): Boolean = this !is Boolean || this
+private fun Any?.toBooleanDefaultFalse(): Boolean = this is Boolean && this
 
 fun Map<String, Any?>.toWrite(id: String, table: Table) = toWrite(table).apply { this.id = id }
