@@ -117,14 +117,14 @@ class XodusTableAccess(
         return instances
     }
 
-    fun Condition.slowDefault(transaction: Transaction, txn: StoreTransaction, read: Read): Sequence<Instance> {
+    fun Condition.slowDefault(transaction: Transaction, txn: StoreTransaction, read: Read): kotlin.sequences.Sequence<Instance> {
         return txn.getAll(table.tableName)
                 .asSequence()
                 .map { it.toInstance(transaction, txn, read) }
                 .filter { instance -> invoke(instance) }
     }
 
-    //Possible return types: EntityIterable, Sequence<Instance>
+    //Possible return types: EntityIterable, kotlin.sequences.Sequence<Instance>
     fun Condition.tryXodusIterable(transaction: Transaction, txn: StoreTransaction, read: Read): Any? = when (this) {
         Condition.Always -> txn.getAll(table.tableName)
         Condition.Never -> txn.find(table.tableName, "__does_not_exist__", 0)
@@ -215,10 +215,10 @@ class XodusTableAccess(
         else -> slowDefault(transaction, txn, read)
     }
 
-    fun Condition.query(transaction: Transaction, txn: StoreTransaction, read: Read): Sequence<Instance> {
+    fun Condition.query(transaction: Transaction, txn: StoreTransaction, read: Read): kotlin.sequences.Sequence<Instance> {
         val result = tryXodusIterable(transaction, txn, read)
         return when (result) {
-            is Sequence<*> -> result as Sequence<Instance>
+            is kotlin.sequences.Sequence<*> -> result as kotlin.sequences.Sequence<Instance>
             is EntityIterable -> result.asSequence().map { it.toInstance(transaction, txn, read) }
             else -> {
                 throw IllegalArgumentException()
@@ -252,10 +252,10 @@ class XodusTableAccess(
         val writeResult = WriteResult(table, write, entity.toIdString())
         doSubs(transaction, write, entity, writeResult)
         if (write.delete) {
+            entity.delete()
+        } else {
             updateEntity(write, entity, writeResult)
             txn.saveEntity(entity)
-        } else {
-            entity.delete()
         }
         return writeResult
     }
