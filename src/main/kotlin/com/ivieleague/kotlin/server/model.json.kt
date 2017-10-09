@@ -389,10 +389,10 @@ fun Map<String, Any?>.toRead(table: Table): Read {
             is Multilink -> read.multilinks[property] = (value as Map<String, Any?>).toRead(property.table)
             null -> {
                 when (key) {
-                    "_condition" -> read.condition = (value as? Map<String, Any?>)?.toCondition(table) ?: Condition.Always
-                    "_after" -> read.startAfter = (value as? Map<String, Any?>)?.toInstance(table)
-                    "_sort" -> read.sort = (value as? List<Map<String, Any?>>)?.map { it.toSort(table) } ?: listOf()
-                    "_count" -> read.count = (value as? Number)?.toInt() ?: 100
+                    "_condition" -> read.condition = (value as? Map<String, Any?>)?.toCondition(table) ?: throw IllegalArgumentException("_condition must be a JSON object.")
+                    "_after" -> read.startAfter = (value as? Map<String, Any?>)?.toInstance(table) ?: throw IllegalArgumentException("_after must be a JSON object.")
+                    "_sort" -> read.sort = (value as? List<Map<String, Any?>>)?.map { it.toSort(table) } ?: throw IllegalArgumentException("_sort must be a JSON list of JSON objects representing sorts.")
+                    "_count" -> read.count = (value as? Number)?.toInt() ?: throw IllegalArgumentException("_count must be a number.")
                     else -> throw IllegalArgumentException("Key '$key' not found in table $table.")
                 }
             }

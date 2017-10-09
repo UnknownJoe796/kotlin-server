@@ -1,14 +1,6 @@
 package com.ivieleague.kotlin.server
 
 import com.ivieleague.kotlin.server.model.*
-import java.util.*
-
-class SecurityDatabaseAccess(val wraps: Fetcher<Table, TableAccess>) : Fetcher<Table, TableAccess> {
-    private val cached = HashMap<Table, SecurityTableAccess>()
-    override fun get(key: Table): TableAccess = cached.getOrPut(key) {
-        SecurityTableAccess(wraps[key])
-    }
-}
 
 class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
 
@@ -133,3 +125,5 @@ class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
         return wraps.update(transaction, write)
     }
 }
+
+fun TableAccess.security() = SecurityTableAccess(this)

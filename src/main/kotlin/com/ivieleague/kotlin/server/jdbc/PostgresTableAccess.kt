@@ -42,11 +42,7 @@
 //        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 //    }
 //
-//    override fun update(transaction: Transaction, write: Write): Instance {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-//    }
-//
-//    override fun delete(transaction: Transaction, id: String): Boolean {
+//    override fun update(transaction: Transaction, write: Write): WriteResult {
 //        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 //    }
 //

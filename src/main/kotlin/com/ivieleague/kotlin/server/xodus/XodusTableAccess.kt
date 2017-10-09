@@ -229,7 +229,7 @@ class XodusTableAccess(
     override fun query(transaction: Transaction, read: Read): Collection<Instance> {
         val sortCondition = read.sortCondition()
         val fullCondition = if (sortCondition != null) Condition.AllConditions(listOf(read.condition, sortCondition)) else read.condition
-        val result = fullCondition.query(transaction, transaction.getXodus(entityStore), read)
+        val result = fullCondition.simplify().query(transaction, transaction.getXodus(entityStore), read)
         if (read.sort.isEmpty()) {
             return result.take(read.count).toList()
         } else {
