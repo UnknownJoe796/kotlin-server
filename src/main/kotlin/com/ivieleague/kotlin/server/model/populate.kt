@@ -1,5 +1,7 @@
 package com.ivieleague.kotlin.server.model
 
+import com.ivieleague.kotlin.server.type.*
+
 fun String.populate(data: Map<String, Any?>) = if (this.startsWith("\${") && this.length > 1 && this.endsWith("}")) {
     val path = this.substring(2, this.length - 1).split('.')
     var current: Any? = data
@@ -9,7 +11,7 @@ fun String.populate(data: Map<String, Any?>) = if (this.startsWith("\${") && thi
             is Instance -> {
                 val property = current.table.properties[pathKey]
                 when (property) {
-                    is Scalar -> current.scalars[property]
+                    is Primitive -> current.scalars[property]
                     is Link -> current.links[property]
                     is Multilink -> current.multilinks[property]
                     else -> throw IllegalArgumentException()
@@ -47,7 +49,7 @@ fun Request.Update.populate(data: Map<String, Any?>) {
 fun Write.populate(data: Map<String, Any?>) {
     id = id?.let { it.populate(data) as String }
 
-    val changes = ArrayList<Pair<Scalar, Any?>>()
+    val changes = ArrayList<Pair<Primitive, Any?>>()
     for ((scalar, value) in this.scalars) {
         changes += scalar to if (value is String) value.populate(data) else value
     }
@@ -75,22 +77,22 @@ fun Condition.populate(data: Map<String, Any?>): Condition {
         Condition.Never -> this
         is Condition.AllConditions -> Condition.AllConditions(conditions.map { it.populate(data) })
         is Condition.AnyConditions -> Condition.AnyConditions(conditions.map { it.populate(data) })
-        is Condition.ScalarEqual -> Condition.ScalarEqual(path, scalar, if (value is String) value.populate(data) else value)
-        is Condition.ScalarNotEqual -> Condition.ScalarNotEqual(path, scalar, if (value is String) value.populate(data) else value)
-        is Condition.ScalarBetween<*> -> Condition.ScalarBetween<Comparable<Any?>>(path, scalar,
+        is Condition.ScalarEqual -> Condition.ScalarEqual(path, primitive, if (value is String) value.populate(data) else value)
+        is Condition.ScalarNotEqual -> Condition.ScalarNotEqual(path, primitive, if (value is String) value.populate(data) else value)
+        is Condition.ScalarBetween<*> -> Condition.ScalarBetween<Comparable<Any?>>(path, primitive,
                 if (lower is String) lower.populate(data) as Comparable<Any?> else lower as Comparable<Any?>,
                 if (upper is String) upper.populate(data) as Comparable<Any?> else upper as Comparable<Any?>
         )
-        is Condition.ScalarLessThanOrEqual<*> -> Condition.ScalarLessThanOrEqual<Comparable<Any?>>(path, scalar,
+        is Condition.ScalarLessThanOrEqual<*> -> Condition.ScalarLessThanOrEqual<Comparable<Any?>>(path, primitive,
                 if (upper is String) upper.populate(data) as Comparable<Any?> else upper as Comparable<Any?>
         )
-        is Condition.ScalarGreaterThanOrEqual<*> -> Condition.ScalarGreaterThanOrEqual<Comparable<Any?>>(path, scalar,
+        is Condition.ScalarGreaterThanOrEqual<*> -> Condition.ScalarGreaterThanOrEqual<Comparable<Any?>>(path, primitive,
                 if (lower is String) lower.populate(data) as Comparable<Any?> else lower as Comparable<Any?>
         )
-        is Condition.ScalarLessThan<*> -> Condition.ScalarLessThan<Comparable<Any?>>(path, scalar,
+        is Condition.ScalarLessThan<*> -> Condition.ScalarLessThan<Comparable<Any?>>(path, primitive,
                 if (upper is String) upper.populate(data) as Comparable<Any?> else upper as Comparable<Any?>
         )
-        is Condition.ScalarGreaterThan<*> -> Condition.ScalarGreaterThan<Comparable<Any?>>(path, scalar,
+        is Condition.ScalarGreaterThan<*> -> Condition.ScalarGreaterThan<Comparable<Any?>>(path, primitive,
                 if (lower is String) lower.populate(data) as Comparable<Any?> else lower as Comparable<Any?>
         )
         is Condition.IdEquals -> Condition.IdEquals(path, id.populate(data) as String)

@@ -1,6 +1,7 @@
 package com.ivieleague.kotlin.server.xodus
 
 import com.ivieleague.kotlin.server.model.*
+import com.ivieleague.kotlin.server.type.*
 import jetbrains.exodus.entitystore.*
 import org.jetbrains.annotations.NotNull
 
@@ -16,7 +17,7 @@ class XodusTableAccess(
             val instance = Instance(
                     table,
                     id = entity.id.toString(),
-                    scalars = read.scalars.associate { scalar -> scalar to entity.getProperty(scalar.key) }.toMutableMap()
+                    scalars = read.primitives.associate { scalar -> scalar to entity.getProperty(scalar.key) }.toMutableMap()
             )
             read.links.forEach { (link, _) ->
                 val linkedId = entity.getProperty(link.key) as? String
@@ -53,7 +54,7 @@ class XodusTableAccess(
         val instance = Instance(
                 table,
                 id = this.id.toString(),
-                scalars = read.scalars.associate { scalar -> scalar to this.getProperty(scalar.key) }.toMutableMap()
+                scalars = read.primitives.associate { scalar -> scalar to this.getProperty(scalar.key) }.toMutableMap()
         )
         read.links.forEach { (link, subread) ->
             val linkedId = this.getProperty(link.key) as? String
@@ -81,7 +82,7 @@ class XodusTableAccess(
                 val instance = Instance(
                         table,
                         id = id,
-                        scalars = read.scalars.associate { scalar -> scalar to entity.getProperty(scalar.key) }.toMutableMap()
+                        scalars = read.primitives.associate { scalar -> scalar to entity.getProperty(scalar.key) }.toMutableMap()
                 )
                 read.links.forEach { (link, _) ->
                     val linkedId = entity.getProperty(link.key) as? String
@@ -164,43 +165,43 @@ class XodusTableAccess(
         }
         is Condition.ScalarEqual -> {
             if (this.path.isEmpty())
-                txn.find(table.tableName, this.scalar.key, this.value as Comparable<*>)
+                txn.find(table.tableName, this.primitive.key, this.value as Comparable<*>)
             else
                 slowDefault(transaction, txn, read)
         }
         is Condition.ScalarNotEqual -> {
             if (this.path.isEmpty())
-                txn.getAll(table.tableName).minus(txn.find(table.tableName, this.scalar.key, this.value as Comparable<*>))
+                txn.getAll(table.tableName).minus(txn.find(table.tableName, this.primitive.key, this.value as Comparable<*>))
             else
                 slowDefault(transaction, txn, read)
         }
         is Condition.ScalarBetween<*> -> {
             if (this.path.isEmpty())
-                txn.find(table.tableName, this.scalar.key, this.lower, this.upper)
+                txn.find(table.tableName, this.primitive.key, this.lower, this.upper)
             else
                 slowDefault(transaction, txn, read)
         }
 //        is Condition.ScalarLessThanOrEqual<*> -> {
 //            if (this.path.isEmpty())
-//                txn.find(table.tableName, this.scalar.key, this.lower, this.upper)
+//                txn.find(table.tableName, this.primitive.key, this.lower, this.upper)
 //            else
 //                slowDefault(transaction, txn, read)
 //        }
 //        is Condition.ScalarGreaterThanOrEqual<*> -> {
 //            if (this.path.isEmpty())
-//                txn.find(table.tableName, this.scalar.key, this.lower, this.upper)
+//                txn.find(table.tableName, this.primitive.key, this.lower, this.upper)
 //            else
 //                slowDefault(transaction, txn, read)
 //        }
 //        is Condition.ScalarLessThan<*> -> {
 //            if (this.path.isEmpty())
-//                txn.find(table.tableName, this.scalar.key, this.lower, this.upper)
+//                txn.find(table.tableName, this.primitive.key, this.lower, this.upper)
 //            else
 //                slowDefault(transaction, txn, read)
 //        }
 //        is Condition.ScalarGreaterThan<*> -> {
 //            if (this.path.isEmpty())
-//                txn.find(table.tableName, this.scalar.key, this.lower, this.upper)
+//                txn.find(table.tableName, this.primitive.key, this.lower, this.upper)
 //            else
 //                slowDefault(transaction, txn, read)
 //        }

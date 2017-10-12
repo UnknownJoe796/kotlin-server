@@ -1,6 +1,7 @@
 package com.ivieleague.kotlin.server.rpc
 
 import com.ivieleague.kotlin.server.model.*
+import com.ivieleague.kotlin.server.type.Instance
 
 class RPCModelUpdate(
         val tableAccess: TableAccess,

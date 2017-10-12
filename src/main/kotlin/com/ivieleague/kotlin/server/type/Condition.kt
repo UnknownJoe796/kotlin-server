@@ -1,4 +1,7 @@
-package com.ivieleague.kotlin.server.model
+package com.ivieleague.kotlin.server.type
+
+import com.ivieleague.kotlin.server.model.Read
+import com.ivieleague.kotlin.server.model.Write
 
 sealed class Condition {
 
@@ -43,51 +46,51 @@ sealed class Condition {
     }
 
 
-    data class ScalarEqual(val path: List<Link> = listOf(), val scalar: Scalar, val value: Any?) : Condition() {
-        override fun dependencies(modify: Read) = getScalarDependencies(path, scalar, modify)
-        override fun invoke(instance: Instance): Boolean = get(path, instance)?.scalars?.get(scalar) == value
-        override fun invoke(write: Write): Boolean = get(path, write)?.scalars?.get(scalar) == value
+    data class ScalarEqual(val path: List<Link> = listOf(), val primitive: Primitive, val value: Any?) : Condition() {
+        override fun dependencies(modify: Read) = getScalarDependencies(path, primitive, modify)
+        override fun invoke(instance: Instance): Boolean = get(path, instance)?.scalars?.get(primitive) == value
+        override fun invoke(write: Write): Boolean = get(path, write)?.scalars?.get(primitive) == value
     }
 
-    data class ScalarNotEqual(val path: List<Link> = listOf(), val scalar: Scalar, val value: Any?) : Condition() {
-        override fun dependencies(modify: Read) = getScalarDependencies(path, scalar, modify)
-        override fun invoke(instance: Instance): Boolean = get(path, instance)?.scalars?.get(scalar) != value
-        override fun invoke(write: Write): Boolean = get(path, write)?.scalars?.get(scalar) != value
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    data class ScalarLessThanOrEqual<T : Comparable<T>>(val path: List<Link> = listOf(), val scalar: Scalar, val upper: T) : Condition() {
-        override fun dependencies(modify: Read) = getScalarDependencies(path, scalar, modify)
-        override fun invoke(instance: Instance): Boolean = (get(path, instance)?.scalars?.get(scalar) as T) <= upper
-        override fun invoke(write: Write): Boolean = (get(path, write)?.scalars?.get(scalar) as T) <= upper
+    data class ScalarNotEqual(val path: List<Link> = listOf(), val primitive: Primitive, val value: Any?) : Condition() {
+        override fun dependencies(modify: Read) = getScalarDependencies(path, primitive, modify)
+        override fun invoke(instance: Instance): Boolean = get(path, instance)?.scalars?.get(primitive) != value
+        override fun invoke(write: Write): Boolean = get(path, write)?.scalars?.get(primitive) != value
     }
 
     @Suppress("UNCHECKED_CAST")
-    data class ScalarGreaterThanOrEqual<T : Comparable<T>>(val path: List<Link> = listOf(), val scalar: Scalar, val lower: T) : Condition() {
-        override fun dependencies(modify: Read) = getScalarDependencies(path, scalar, modify)
-        override fun invoke(instance: Instance): Boolean = (get(path, instance)?.scalars?.get(scalar) as T) >= lower
-        override fun invoke(write: Write): Boolean = (get(path, write)?.scalars?.get(scalar) as T) >= lower
+    data class ScalarLessThanOrEqual<T : Comparable<T>>(val path: List<Link> = listOf(), val primitive: Primitive, val upper: T) : Condition() {
+        override fun dependencies(modify: Read) = getScalarDependencies(path, primitive, modify)
+        override fun invoke(instance: Instance): Boolean = (get(path, instance)?.scalars?.get(primitive) as T) <= upper
+        override fun invoke(write: Write): Boolean = (get(path, write)?.scalars?.get(primitive) as T) <= upper
     }
 
     @Suppress("UNCHECKED_CAST")
-    data class ScalarLessThan<T : Comparable<T>>(val path: List<Link> = listOf(), val scalar: Scalar, val upper: T) : Condition() {
-        override fun dependencies(modify: Read) = getScalarDependencies(path, scalar, modify)
-        override fun invoke(instance: Instance): Boolean = (get(path, instance)?.scalars?.get(scalar) as T) < upper
-        override fun invoke(write: Write): Boolean = (get(path, write)?.scalars?.get(scalar) as T) < upper
+    data class ScalarGreaterThanOrEqual<T : Comparable<T>>(val path: List<Link> = listOf(), val primitive: Primitive, val lower: T) : Condition() {
+        override fun dependencies(modify: Read) = getScalarDependencies(path, primitive, modify)
+        override fun invoke(instance: Instance): Boolean = (get(path, instance)?.scalars?.get(primitive) as T) >= lower
+        override fun invoke(write: Write): Boolean = (get(path, write)?.scalars?.get(primitive) as T) >= lower
     }
 
     @Suppress("UNCHECKED_CAST")
-    data class ScalarGreaterThan<T : Comparable<T>>(val path: List<Link> = listOf(), val scalar: Scalar, val lower: T) : Condition() {
-        override fun dependencies(modify: Read) = getScalarDependencies(path, scalar, modify)
-        override fun invoke(instance: Instance): Boolean = (get(path, instance)?.scalars?.get(scalar) as T) > lower
-        override fun invoke(write: Write): Boolean = (get(path, write)?.scalars?.get(scalar) as T) > lower
+    data class ScalarLessThan<T : Comparable<T>>(val path: List<Link> = listOf(), val primitive: Primitive, val upper: T) : Condition() {
+        override fun dependencies(modify: Read) = getScalarDependencies(path, primitive, modify)
+        override fun invoke(instance: Instance): Boolean = (get(path, instance)?.scalars?.get(primitive) as T) < upper
+        override fun invoke(write: Write): Boolean = (get(path, write)?.scalars?.get(primitive) as T) < upper
     }
 
     @Suppress("UNCHECKED_CAST")
-    data class ScalarBetween<T : Comparable<T>>(val path: List<Link> = listOf(), val scalar: Scalar, val lower: T, val upper: T) : Condition() {
-        override fun dependencies(modify: Read) = getScalarDependencies(path, scalar, modify)
-        override fun invoke(instance: Instance): Boolean = (get(path, instance)?.scalars?.get(scalar) as T) in (lower..upper)
-        override fun invoke(write: Write): Boolean = (get(path, write)?.scalars?.get(scalar) as T) in (lower..upper)
+    data class ScalarGreaterThan<T : Comparable<T>>(val path: List<Link> = listOf(), val primitive: Primitive, val lower: T) : Condition() {
+        override fun dependencies(modify: Read) = getScalarDependencies(path, primitive, modify)
+        override fun invoke(instance: Instance): Boolean = (get(path, instance)?.scalars?.get(primitive) as T) > lower
+        override fun invoke(write: Write): Boolean = (get(path, write)?.scalars?.get(primitive) as T) > lower
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    data class ScalarBetween<T : Comparable<T>>(val path: List<Link> = listOf(), val primitive: Primitive, val lower: T, val upper: T) : Condition() {
+        override fun dependencies(modify: Read) = getScalarDependencies(path, primitive, modify)
+        override fun invoke(instance: Instance): Boolean = (get(path, instance)?.scalars?.get(primitive) as T) in (lower..upper)
+        override fun invoke(write: Write): Boolean = (get(path, write)?.scalars?.get(primitive) as T) in (lower..upper)
     }
 
 
@@ -150,12 +153,12 @@ sealed class Condition {
             return current
         }
 
-        private fun getScalarDependencies(path: List<Link>, scalar: Scalar, modify: Read) {
+        private fun getScalarDependencies(path: List<Link>, primitive: Primitive, modify: Read) {
             var current = modify
             for (link in path) {
                 current = current.links.getOrPut(link) { Read() }
             }
-            current.scalars += scalar
+            current.primitives += primitive
         }
     }
 }

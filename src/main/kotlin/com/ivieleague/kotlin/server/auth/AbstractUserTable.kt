@@ -1,6 +1,10 @@
 package com.ivieleague.kotlin.server.auth
 
-import com.ivieleague.kotlin.server.model.*
+import com.ivieleague.kotlin.server.model.PrimitiveType
+import com.ivieleague.kotlin.server.model.TableImpl
+import com.ivieleague.kotlin.server.type.Instance
+import com.ivieleague.kotlin.server.type.Primitive
+import com.ivieleague.kotlin.server.type.SecurityRules
 import org.mindrot.jbcrypt.BCrypt
 
 
@@ -13,10 +17,10 @@ A provided user reader allows you to read a user from a JWT
 */
 
 abstract class AbstractUserTable(tableName: String, tableDescription: String) : TableImpl(tableName, tableDescription) {
-    val hash = Scalar(
+    val hash = Primitive(
             key = "passwordhash",
             description = "The password hash.",
-            type = ScalarType.ShortString,
+            type = PrimitiveType.ShortString,
             readPermission = SecurityRules.never,
             editPermission = SecurityRules.never,
             writePermission = SecurityRules.never

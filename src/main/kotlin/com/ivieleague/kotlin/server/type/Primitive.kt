@@ -1,6 +1,8 @@
-package com.ivieleague.kotlin.server.model
+package com.ivieleague.kotlin.server.type
 
-class Multilink(
+import com.ivieleague.kotlin.server.model.PrimitiveType
+
+class Primitive(
         override val key: String,
         override val description: String,
         override val startVersion: Int = 0,
@@ -8,5 +10,5 @@ class Multilink(
         override val readPermission: SecurityRule = SecurityRules.always,
         override val editPermission: SecurityRule = SecurityRules.always,
         override val writePermission: SecurityRule = SecurityRules.always,
-        val table: Table
+        val type: PrimitiveType
 ) : Property

@@ -7,6 +7,7 @@ import com.auth0.jwt.exceptions.TokenExpiredException
 import com.ivieleague.kotlin.server.exceptionBadRequest
 import com.ivieleague.kotlin.server.exceptionUnauthorized
 import com.ivieleague.kotlin.server.model.*
+import com.ivieleague.kotlin.server.type.Instance
 import java.util.*
 
 data class TokenInformation(

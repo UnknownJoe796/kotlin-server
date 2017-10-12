@@ -1,6 +1,7 @@
 package com.ivieleague.kotlin.server.model
 
 import com.ivieleague.kotlin.server.Fetcher
+import com.ivieleague.kotlin.server.type.Table
 
 /**
  *

@@ -1,25 +1,26 @@
 package com.ivieleague.kotlin.server.rpc
 
 import com.ivieleague.kotlin.server.model.*
+import com.ivieleague.kotlin.server.type.Instance
+import com.ivieleague.kotlin.server.type.Primitive
+import com.ivieleague.kotlin.server.type.Property
 
 class RPCModelDelete(
         val tableAccess: TableAccess,
         val schema: Schema
 ) : RPCMethod {
     override val description: String = "Deletes an item from the table ${tableAccess.table.tableName}"
-    override val arguments: List<RPCMethod.Argument> = listOf(
-            RPCMethod.Argument(
+    override val arguments: List<Property> = listOf(
+            Primitive(
                     key = "id",
-                    type = String::class.java,
-                    description = "The id of the object to retrieve.",
-                    optional = false,
-                    isNullable = false
+                    type = PrimitiveType.ShortString,
+                    description = "The id of the object to retrieve."
             )
     )
-    override val returns: RPCMethod.Returns = RPCMethod.Returns(
-            type = WriteResult::class.java,
-            description = "The result of writing the changes.  Will contain only IDs.",
-            isNullable = false
+    override val returns: Property = Primitive(
+            key = "id",
+            type = PrimitiveType.ShortString,
+            description = "The id of the object to deleted."
     )
 
     override fun invoke(user: Any?, arguments: List<Any?>): Any? = invoke(user, arguments[0] as String)

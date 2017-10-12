@@ -1,5 +1,9 @@
 package com.ivieleague.kotlin.server.model
 
+import com.ivieleague.kotlin.server.type.Instance
+import com.ivieleague.kotlin.server.type.Link
+import com.ivieleague.kotlin.server.type.Multilink
+
 object TableAccessCommon {
 
     fun deferPopulateLinks(transaction: Transaction, property: Link, otherAccess: TableAccess, read: Read, idMap: Map<Instance, String>) {

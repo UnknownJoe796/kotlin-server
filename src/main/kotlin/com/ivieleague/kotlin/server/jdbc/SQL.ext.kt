@@ -1,9 +1,13 @@
 package com.ivieleague.kotlin.server.jdbc
 
-import com.ivieleague.kotlin.server.model.*
+import com.ivieleague.kotlin.server.model.PrimitiveType
 import com.ivieleague.kotlin.server.sql.SQLColumn
 import com.ivieleague.kotlin.server.sql.SQLDataType
 import com.ivieleague.kotlin.server.sql.SQLTable
+import com.ivieleague.kotlin.server.type.Link
+import com.ivieleague.kotlin.server.type.Multilink
+import com.ivieleague.kotlin.server.type.Primitive
+import com.ivieleague.kotlin.server.type.Table
 
 
 val StandardPrimaryKey = SQLColumn(
@@ -27,22 +31,22 @@ val StandardOwnedKey = SQLColumn(
         modifiers = listOf()
 )
 
-fun ScalarType.toSql(): SQLDataType = when (this) {
-    ScalarType.Boolean -> SQLDataType.SQLBool
-    ScalarType.Byte -> SQLDataType.SQLShort
-    ScalarType.Short -> SQLDataType.SQLShort
-    ScalarType.Int -> SQLDataType.SQLInt
-    ScalarType.Long -> SQLDataType.SQLLong
-    ScalarType.Float -> SQLDataType.SQLReal
-    ScalarType.Double -> SQLDataType.SQLDouble
-    ScalarType.ShortString -> SQLDataType.SQLVarchar(255)
-    ScalarType.LongString -> SQLDataType.SQLText
-    ScalarType.JSON -> SQLDataType.SQLJson
-    ScalarType.Date -> SQLDataType.SQLTimestamp
-    is ScalarType.Enum -> SQLDataType.SQLShort
+fun PrimitiveType.toSql(): SQLDataType = when (this) {
+    PrimitiveType.Boolean -> SQLDataType.SQLBool
+    PrimitiveType.Byte -> SQLDataType.SQLShort
+    PrimitiveType.Short -> SQLDataType.SQLShort
+    PrimitiveType.Int -> SQLDataType.SQLInt
+    PrimitiveType.Long -> SQLDataType.SQLLong
+    PrimitiveType.Float -> SQLDataType.SQLReal
+    PrimitiveType.Double -> SQLDataType.SQLDouble
+    PrimitiveType.ShortString -> SQLDataType.SQLVarchar(255)
+    PrimitiveType.LongString -> SQLDataType.SQLText
+    PrimitiveType.JSON -> SQLDataType.SQLJson
+    PrimitiveType.Date -> SQLDataType.SQLTimestamp
+    is PrimitiveType.Enum -> SQLDataType.SQLShort
 }
 
-fun Scalar.toSql(): SQLColumn = SQLColumn(
+fun Primitive.toSql(): SQLColumn = SQLColumn(
         name = key,
         description = description,
         type = type.toSql(),
@@ -71,7 +75,7 @@ fun Multilink.toSql(prefix: String): SQLTable {
 fun Table.toSql() = SQLTable(
         name = tableName,
         description = tableDescription,
-        columns = listOf(StandardPrimaryKey) + scalars.map { it.toSql() } + links.map { it.toSql() },
+        columns = listOf(StandardPrimaryKey) + primitives.map { it.toSql() } + links.map { it.toSql() },
         primaryKey = listOf(StandardPrimaryKey)
 )
 

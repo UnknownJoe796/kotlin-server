@@ -13,7 +13,7 @@
 //        override val table: Table
 //) : TableAccess {
 //
-//    val sqlScalars = table.scalars.associate { it to it.toSql() }
+//    val sqlScalars = table.primitives.associate { it to it.toSql() }
 //    val sqlLinks = table.links.associate { it to it.toSql() }
 //    val sqlMultilinks = table.multilinks.associate { it to it.toSql(table.tableName) }
 //    val sqlTable = SQLTable(
@@ -53,7 +53,7 @@
 //        return SQLUpsert(
 //                sqlTable,
 //                (this.id?.toLong()?.let { mapOf(StandardPrimaryKey to SQLLiteral.LInteger(it)) } ?: mapOf()) +
-//                        this.scalars.entries.associate { sqlScalars[it.key]!! to it.value.toSQLLiteral() } +
+//                        this.primitives.entries.associate { sqlScalars[it.key]!! to it.value.toSQLLiteral() } +
 //                        pastLayers.entries.associate { sqlLinks[it.key]!! to it.value?.id.toSQLLiteral() }
 //        )
 //    }
@@ -93,22 +93,22 @@
 //
 //
 //    //convert ResultSet to instances
-//    fun ResultSet.readScalar(scalar: Scalar): Any? {
-//        val type = scalar.type
-//        val key = sqlScalars[scalar]!!.toString()
+//    fun ResultSet.readScalar(primitive: Primitive): Any? {
+//        val type = primitive.type
+//        val key = sqlScalars[primitive]!!.toString()
 //        return when (type) {
-//            ScalarType.Boolean -> getBoolean(key)
-//            ScalarType.Byte -> getByte(key)
-//            ScalarType.Short -> getShort(key)
-//            ScalarType.Int -> getInt(key)
-//            ScalarType.Long -> getLong(key)
-//            ScalarType.Float -> getFloat(key)
-//            ScalarType.Double -> getDouble(key)
-//            ScalarType.ShortString -> getString(key)
-//            ScalarType.LongString -> getString(key)
-//            ScalarType.JSON -> JsonObjectMapper.readValue(getString(key), Any::class.java)
-//            ScalarType.Date -> getDate(key)
-//            is ScalarType.Enum -> type.enum[getByte(key)]
+//            PrimitiveType.Boolean -> getBoolean(key)
+//            PrimitiveType.Byte -> getByte(key)
+//            PrimitiveType.Short -> getShort(key)
+//            PrimitiveType.Int -> getInt(key)
+//            PrimitiveType.Long -> getLong(key)
+//            PrimitiveType.Float -> getFloat(key)
+//            PrimitiveType.Double -> getDouble(key)
+//            PrimitiveType.ShortString -> getString(key)
+//            PrimitiveType.LongString -> getString(key)
+//            PrimitiveType.JSON -> JsonObjectMapper.readValue(getString(key), Any::class.java)
+//            PrimitiveType.Date -> getDate(key)
+//            is PrimitiveType.Enum -> type.enum[getByte(key)]
 //        }
 //    }
 //
@@ -119,9 +119,9 @@
 //            try {
 //                val id = this.getLong("_id").toString()
 //                val result = Instance(table, id)
-//                for (scalar in read.scalars) {
-//                    result.scalars[scalar] = try {
-//                        this.readScalar(scalar)
+//                for (primitive in read.primitives) {
+//                    result.primitives[primitive] = try {
+//                        this.readScalar(primitive)
 //                    } catch (e: SQLException) {
 //                        e.printStackTrace()
 //                    }

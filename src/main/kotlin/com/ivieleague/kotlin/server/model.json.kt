@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.ivieleague.kotlin.server.model.*
+import com.ivieleague.kotlin.server.type.*
 import java.io.StringWriter
 import java.math.BigDecimal
 import java.util.*
@@ -84,7 +85,7 @@ fun JsonGenerator.writeWriteResult(result: WriteResult) {
 
         val removals = values.removals
         if (removals != null) {
-            writeFieldName("additions")
+            writeFieldName("removals")
             writeStartArray()
             for (value in removals) {
                 writeWriteResult(value)
@@ -94,7 +95,7 @@ fun JsonGenerator.writeWriteResult(result: WriteResult) {
 
         val replacements = values.replacements
         if (replacements != null) {
-            writeFieldName("additions")
+            writeFieldName("replacements")
             writeStartArray()
             for (value in replacements) {
                 writeWriteResult(value)
@@ -111,7 +112,7 @@ fun JsonGenerator.writeWriteResult(result: WriteResult) {
 fun Table.toInfoMap(user: Instance?): Map<String, Any?> = HashMap<String, Any?>().also {
     it["table_name"] = tableName
     it["table_description"] = tableDescription
-    for (property in scalars) {
+    for (property in primitives) {
         it[property.key] = property.toInfoMap(user)
     }
     for (property in links) {
@@ -122,7 +123,7 @@ fun Table.toInfoMap(user: Instance?): Map<String, Any?> = HashMap<String, Any?>(
     }
 }
 
-fun Scalar.toInfoMap(user: Instance?): Map<String, Any?> = mapOf(
+fun Primitive.toInfoMap(user: Instance?): Map<String, Any?> = mapOf(
         "key" to key,
         "description" to description,
         "start_version" to startVersion,
@@ -160,13 +161,13 @@ fun Condition.toInfoMap(): Map<String, Any?> = when (this) {
     Condition.Never -> mapOf("type" to "never")
     is Condition.AllConditions -> mapOf("type" to "all", "conditions" to conditions.map { it.toInfoMap() })
     is Condition.AnyConditions -> mapOf("type" to "any", "conditions" to conditions.map { it.toInfoMap() })
-    is Condition.ScalarEqual -> mapOf("type" to "scalarEqual", "path" to path.map { it.key }, "scalar" to scalar.key, "value" to value)
-    is Condition.ScalarNotEqual -> mapOf("type" to "scalarNotEqual", "path" to path.map { it.key }, "scalar" to scalar.key, "value" to value)
-    is Condition.ScalarBetween<*> -> mapOf("type" to "scalarBetween", "path" to path.map { it.key }, "scalar" to scalar.key, "lower" to lower, "upper" to upper)
-    is Condition.ScalarLessThanOrEqual<*> -> mapOf("type" to "scalarLessThanOrEqual", "path" to path.map { it.key }, "scalar" to scalar.key, "upper" to upper)
-    is Condition.ScalarGreaterThanOrEqual<*> -> mapOf("type" to "scalarGreaterThanOrEqual", "path" to path.map { it.key }, "scalar" to scalar.key, "lower" to lower)
-    is Condition.ScalarLessThan<*> -> mapOf("type" to "scalarLessThan", "path" to path.map { it.key }, "scalar" to scalar.key, "upper" to upper)
-    is Condition.ScalarGreaterThan<*> -> mapOf("type" to "scalarGreaterThan", "path" to path.map { it.key }, "scalar" to scalar.key, "lower" to lower)
+    is Condition.ScalarEqual -> mapOf("type" to "scalarEqual", "path" to path.map { it.key }, "primitive" to primitive.key, "value" to value)
+    is Condition.ScalarNotEqual -> mapOf("type" to "scalarNotEqual", "path" to path.map { it.key }, "primitive" to primitive.key, "value" to value)
+    is Condition.ScalarBetween<*> -> mapOf("type" to "scalarBetween", "path" to path.map { it.key }, "primitive" to primitive.key, "lower" to lower, "upper" to upper)
+    is Condition.ScalarLessThanOrEqual<*> -> mapOf("type" to "scalarLessThanOrEqual", "path" to path.map { it.key }, "primitive" to primitive.key, "upper" to upper)
+    is Condition.ScalarGreaterThanOrEqual<*> -> mapOf("type" to "scalarGreaterThanOrEqual", "path" to path.map { it.key }, "primitive" to primitive.key, "lower" to lower)
+    is Condition.ScalarLessThan<*> -> mapOf("type" to "scalarLessThan", "path" to path.map { it.key }, "primitive" to primitive.key, "upper" to upper)
+    is Condition.ScalarGreaterThan<*> -> mapOf("type" to "scalarGreaterThan", "path" to path.map { it.key }, "primitive" to primitive.key, "lower" to lower)
     is Condition.IdEquals -> mapOf("type" to "idEquals", "path" to path.map { it.key }, "id" to id)
     is Condition.MultilinkContains -> mapOf("type" to "multilinkContains", "path" to path.map { it.key }, "multilink" to multilink.key, "id" to id)
     is Condition.MultilinkDoesNotContain -> mapOf("type" to "multilinkDoesNotContain", "path" to path.map { it.key }, "multilink" to multilink.key, "id" to id)
@@ -187,7 +188,7 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                     currentTable = link.table
                     link
                 }?.toList() ?: listOf(),
-                scalar = currentTable.properties[this["scalar"] as String] as Scalar,
+                primitive = currentTable.properties[this["primitive"] as String] as Primitive,
                 value = this["value"]
         )
     }
@@ -199,7 +200,7 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                     currentTable = link.table
                     link
                 }?.toList() ?: listOf(),
-                scalar = currentTable.properties[this["scalar"] as String] as Scalar,
+                primitive = currentTable.properties[this["primitive"] as String] as Primitive,
                 value = this["value"]
         )
     }
@@ -211,7 +212,7 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                     currentTable = link.table
                     link
                 }?.toList() ?: listOf(),
-                scalar = currentTable.properties[this["scalar"] as String] as Scalar,
+                primitive = currentTable.properties[this["primitive"] as String] as Primitive,
                 lower = this["lower"] as Comparable<Any>,
                 upper = this["upper"] as Comparable<Any>
         )
@@ -224,7 +225,7 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                     currentTable = link.table
                     link
                 }?.toList() ?: listOf(),
-                scalar = currentTable.properties[this["scalar"] as String] as Scalar,
+                primitive = currentTable.properties[this["primitive"] as String] as Primitive,
                 upper = this["upper"] as Comparable<Any>
         )
     }
@@ -236,7 +237,7 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                     currentTable = link.table
                     link
                 }?.toList() ?: listOf(),
-                scalar = currentTable.properties[this["scalar"] as String] as Scalar,
+                primitive = currentTable.properties[this["primitive"] as String] as Primitive,
                 lower = this["lower"] as Comparable<Any>
         )
     }
@@ -248,7 +249,7 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                     currentTable = link.table
                     link
                 }?.toList() ?: listOf(),
-                scalar = currentTable.properties[this["scalar"] as String] as Scalar,
+                primitive = currentTable.properties[this["primitive"] as String] as Primitive,
                 upper = this["upper"] as Comparable<Any>
         )
     }
@@ -260,7 +261,7 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                     currentTable = link.table
                     link
                 }?.toList() ?: listOf(),
-                scalar = currentTable.properties[this["scalar"] as String] as Scalar,
+                primitive = currentTable.properties[this["primitive"] as String] as Primitive,
                 lower = this["lower"] as Comparable<Any>
         )
     }
@@ -283,7 +284,7 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                     currentTable = link.table
                     link
                 }?.toList() ?: listOf(),
-                multilink = currentTable.properties[this["scalar"] as String] as Multilink,
+                multilink = currentTable.properties[this["primitive"] as String] as Multilink,
                 id = this["id"] as String
         )
     }
@@ -295,7 +296,7 @@ fun Map<String, Any?>.toCondition(table: Table): Condition = when ((this["type"]
                     currentTable = link.table
                     link
                 }?.toList() ?: listOf(),
-                multilink = currentTable.properties[this["scalar"] as String] as Multilink,
+                multilink = currentTable.properties[this["primitive"] as String] as Multilink,
                 id = this["id"] as String
         )
     }
@@ -362,7 +363,7 @@ fun Map<String, Any?>.toInstance(table: Table): Instance {
     for ((key, value) in this) {
         val property = table.properties[key]
         when (property) {
-            is Scalar -> instance.scalars[property] = value
+            is Primitive -> instance.scalars[property] = value
             is Link -> instance.links[property] = (value as Map<String, Any?>).toInstance(property.table)
             is Multilink -> instance.multilinks[property] = (value as List<Map<String, Any?>>).map { it.toInstance(property.table) }
         }
@@ -372,7 +373,7 @@ fun Map<String, Any?>.toInstance(table: Table): Instance {
 }
 
 fun Map<String, Any?>.toSort(table: Table): Sort = Sort(
-        scalar = table.properties[this["scalar"] as String] as Scalar,
+        primitive = table.properties[this["primitive"] as String] as Primitive,
         ascending = this["ascending"] as? Boolean ?: true,
         nullsLast = this["nulls_last"] as? Boolean ?: true
 )
@@ -384,7 +385,7 @@ fun Map<String, Any?>.toRead(table: Table): Read {
     for ((key, value) in this) {
         val property = table.properties[key]
         when (property) {
-            is Scalar -> if (value !is Boolean || value) read.scalars += property
+            is Primitive -> if (value !is Boolean || value) read.primitives += property
             is Link -> read.links[property] = (value as Map<String, Any?>).toRead(property.table)
             is Multilink -> read.multilinks[property] = (value as Map<String, Any?>).toRead(property.table)
             null -> {
@@ -406,7 +407,7 @@ fun Map<String, Any?>.toRead(table: Table): Read {
 @Suppress("UNCHECKED_CAST")
 fun Map<String, Any?>.toWrite(table: Table): Write {
 
-    val scalars = HashMap<Scalar, Any?>()
+    val scalars = HashMap<Primitive, Any?>()
     val links = HashMap<Link, Write?>()
     val multilinks = HashMap<Multilink, MultilinkModifications>()
 
@@ -424,21 +425,21 @@ fun Map<String, Any?>.toWrite(table: Table): Write {
         } else {
             val property = table.properties[key]
             when (property) {
-                is Scalar -> {
+                is Primitive -> {
                     val type = property.type
                     scalars[property] = when (type) {
-                        ScalarType.Boolean -> value as Boolean
-                        ScalarType.Byte -> (value as Number).toByte()
-                        ScalarType.Short -> (value as Number).toShort()
-                        ScalarType.Int -> (value as Number).toInt()
-                        ScalarType.Long -> (value as Number).toLong()
-                        ScalarType.Float -> (value as Number).toFloat()
-                        ScalarType.Double -> (value as Number).toDouble()
-                        ScalarType.ShortString -> value as String
-                        ScalarType.LongString -> value as String
-                        ScalarType.Date -> Date(value as Long)
-                        ScalarType.JSON -> value
-                        is ScalarType.Enum -> type.enum.indexedByName[value as String]!!.value
+                        PrimitiveType.Boolean -> value as Boolean
+                        PrimitiveType.Byte -> (value as Number).toByte()
+                        PrimitiveType.Short -> (value as Number).toShort()
+                        PrimitiveType.Int -> (value as Number).toInt()
+                        PrimitiveType.Long -> (value as Number).toLong()
+                        PrimitiveType.Float -> (value as Number).toFloat()
+                        PrimitiveType.Double -> (value as Number).toDouble()
+                        PrimitiveType.ShortString -> value as String
+                        PrimitiveType.LongString -> value as String
+                        PrimitiveType.Date -> Date(value as Long)
+                        PrimitiveType.JSON -> value
+                        is PrimitiveType.Enum -> type.enum.indexedByName[value as String]!!.value
                     }
                 }
                 is Link -> links[property] = (value as Map<String, Any?>).toWrite(property.table)

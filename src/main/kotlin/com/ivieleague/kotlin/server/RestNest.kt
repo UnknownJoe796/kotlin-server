@@ -1,6 +1,7 @@
 package com.ivieleague.kotlin.server
 
 import com.ivieleague.kotlin.server.model.*
+import com.ivieleague.kotlin.server.type.Instance
 import org.jetbrains.ktor.application.ApplicationCall
 import org.jetbrains.ktor.application.call
 import org.jetbrains.ktor.routing.*

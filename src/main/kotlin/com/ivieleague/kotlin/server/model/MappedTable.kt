@@ -1,5 +1,7 @@
 package com.ivieleague.kotlin.server.model
 
+import com.ivieleague.kotlin.server.type.*
+
 
 class MappedTable(val wraps: TableAccess) : TableAccess, Table {
 
@@ -11,11 +13,11 @@ class MappedTable(val wraps: TableAccess) : TableAccess, Table {
         get() = wraps.table.tableDescription
 
 
-    val scalarMappers = HashMap<Scalar, ScalarMapping>()
+    val scalarMappers = HashMap<Primitive, ScalarMapping>()
     val linkMappers = HashMap<Link, LinkMapping>()
     val multilinkMappers = HashMap<Multilink, MultilinkMapping>()
 
-    override val scalars by lazy { scalarMappers.values.map { it.wraps } }
+    override val primitives by lazy { scalarMappers.values.map { it.wraps } }
     override val links by lazy { linkMappers.values.map { it.wraps } }
     override val multilinks by lazy { multilinkMappers.values.map { it.wraps } }
 
@@ -27,7 +29,7 @@ class MappedTable(val wraps: TableAccess) : TableAccess, Table {
         return Instance(
                 table,
                 row.id,
-                myRead.scalars.associate { it to scalarMappers[it]!!.doRead(transaction, row) }.toMutableMap(),
+                myRead.primitives.associate { it to scalarMappers[it]!!.doRead(transaction, row) }.toMutableMap(),
                 myRead.links.entries.associate { it.key to linkMappers[it.key]!!.doRead(transaction, row) }.toMutableMap(),
                 myRead.multilinks.entries.associate { it.key to multilinkMappers[it.key]!!.doRead(transaction, row) }.toMutableMap()
         )
@@ -36,7 +38,7 @@ class MappedTable(val wraps: TableAccess) : TableAccess, Table {
     private fun innerRead(transaction: Transaction, outer: Read): Read {
         val inner = Read()
         inner.condition = innerQuery(transaction, outer.condition)
-        for (property in outer.scalars) {
+        for (property in outer.primitives) {
             scalarMappers[property]?.mapRead(transaction, inner)
         }
         for ((property, sub) in outer.links) {
@@ -101,7 +103,7 @@ class MappedTable(val wraps: TableAccess) : TableAccess, Table {
     //Do actions
 
     interface ScalarMapping {
-        val wraps: Scalar
+        val wraps: Primitive
         fun mapWrite(transaction: Transaction, value: Any?, modify: Write)
         fun mapRead(transaction: Transaction, modify: Read)
         fun doRead(transaction: Transaction, instance: Instance): Any?
@@ -124,13 +126,13 @@ class MappedTable(val wraps: TableAccess) : TableAccess, Table {
         fun mapQuery(transaction: Transaction, input: Condition): Condition
     }
 
-    class ScalarThroughMapping(override val wraps: Scalar) : ScalarMapping {
+    class ScalarThroughMapping(override val wraps: Primitive) : ScalarMapping {
         override fun mapWrite(transaction: Transaction, value: Any?, modify: Write) {
             modify.scalars[wraps] = value
         }
 
         override fun mapRead(transaction: Transaction, modify: Read) {
-            modify.scalars.add(wraps)
+            modify.primitives.add(wraps)
         }
 
         override fun doRead(transaction: Transaction, instance: Instance): Any? = instance.scalars[wraps]

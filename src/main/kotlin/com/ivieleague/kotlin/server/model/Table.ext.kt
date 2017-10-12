@@ -1,37 +1,9 @@
 package com.ivieleague.kotlin.server.model
 
 import com.ivieleague.kotlin.server.exceptionBadRequest
+import com.ivieleague.kotlin.server.type.Instance
+import com.ivieleague.kotlin.server.type.Table
 import java.util.*
-
-private val Table_properties = WeakHashMap<Table, Map<String, Property>>()
-val Table.properties: Map<String, Property>
-    get() = Table_properties.getOrPut(this) {
-        HashMap<String, Property>().also {
-            for (scalar in this.scalars)
-                it[scalar.key] = scalar
-            for (link in this.links)
-                it[link.key] = link
-            for (multilink in this.multilinks)
-                it[multilink.key] = multilink
-        }
-    }
-
-abstract class SortComparator<T>(val sort: Sort) : kotlin.Comparator<T?>
-
-fun Sort.comparator(): SortComparator<*> = when (this.scalar.type) {
-    ScalarType.Boolean -> createSortComparator<Boolean>(this)
-    ScalarType.Byte -> createSortComparator<Byte>(this)
-    ScalarType.Short -> createSortComparator<Short>(this)
-    ScalarType.Int -> createSortComparator<Int>(this)
-    ScalarType.Long -> createSortComparator<Long>(this)
-    ScalarType.Float -> createSortComparator<Float>(this)
-    ScalarType.Double -> createSortComparator<Double>(this)
-    ScalarType.ShortString -> createSortComparator<String>(this)
-    ScalarType.LongString -> createSortComparator<String>(this)
-    ScalarType.JSON -> throw exceptionBadRequest("No sorting exists for JSON objects.")
-    ScalarType.Date -> createSortComparator<Date>(this)
-    is ScalarType.Enum -> createSortComparator<String>(this)
-}
 
 private fun <T : Comparable<T>> createSortComparator(sort: Sort): SortComparator<T> {
     return if (sort.ascending) {
@@ -105,6 +77,23 @@ private fun <T : Comparable<T>> createSortComparator(sort: Sort): SortComparator
     }
 }
 
+abstract class SortComparator<T>(val sort: Sort) : kotlin.Comparator<T?>
+
+fun Sort.comparator(): SortComparator<*> = when (this.primitive.type) {
+    PrimitiveType.Boolean -> createSortComparator<Boolean>(this)
+    PrimitiveType.Byte -> createSortComparator<Byte>(this)
+    PrimitiveType.Short -> createSortComparator<Short>(this)
+    PrimitiveType.Int -> createSortComparator<Int>(this)
+    PrimitiveType.Long -> createSortComparator<Long>(this)
+    PrimitiveType.Float -> createSortComparator<Float>(this)
+    PrimitiveType.Double -> createSortComparator<Double>(this)
+    PrimitiveType.ShortString -> createSortComparator<String>(this)
+    PrimitiveType.LongString -> createSortComparator<String>(this)
+    PrimitiveType.JSON -> throw exceptionBadRequest("No sorting exists for JSON objects.")
+    PrimitiveType.Date -> createSortComparator<Date>(this)
+    is PrimitiveType.Enum -> createSortComparator<String>(this)
+}
+
 fun Table.comparator(sort: List<Sort>): Comparator<Instance> = object : kotlin.Comparator<Instance> {
 
     @Suppress("UNCHECKED_CAST")
@@ -112,7 +101,7 @@ fun Table.comparator(sort: List<Sort>): Comparator<Instance> = object : kotlin.C
 
     override fun compare(a: Instance, b: Instance): Int {
         for (comp in comparators) {
-            val result = comp.compare(a.scalars[comp.sort.scalar], b.scalars[comp.sort.scalar])
+            val result = comp.compare(a.scalars[comp.sort.primitive], b.scalars[comp.sort.primitive])
             if (result != 0) return result
         }
         return a.id.compareTo(b.id)

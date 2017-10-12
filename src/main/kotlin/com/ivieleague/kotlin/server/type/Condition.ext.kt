@@ -1,4 +1,4 @@
-package com.ivieleague.kotlin.server.model
+package com.ivieleague.kotlin.server.type
 
 fun Condition.simplify(): Condition = when (this) {
     is Condition.AllConditions -> {

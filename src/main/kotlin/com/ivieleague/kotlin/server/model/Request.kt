@@ -1,5 +1,8 @@
 package com.ivieleague.kotlin.server.model
 
+import com.ivieleague.kotlin.server.type.Instance
+import com.ivieleague.kotlin.server.type.Table
+
 sealed class Request<T> {
     abstract val table: Table
     abstract fun invoke(transaction: Transaction, tableAccess: TableAccess): T

@@ -1,6 +1,9 @@
 package com.ivieleague.kotlin.server
 
 import com.ivieleague.kotlin.server.model.*
+import com.ivieleague.kotlin.server.type.Condition
+import com.ivieleague.kotlin.server.type.Instance
+import com.ivieleague.kotlin.server.type.Table
 
 class SecurityTableAccess(val wraps: TableAccess) : TableAccess {
 

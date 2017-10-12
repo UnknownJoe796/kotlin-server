@@ -1,18 +1,16 @@
-package com.ivieleague.kotlin.server.model
+package com.ivieleague.kotlin.server.type
 
 interface Table {
     val tableName: String
     val tableDescription: String
 
-    val scalars: Collection<Scalar>
+    val primitives: Collection<Primitive>
     val links: Collection<Link>
     val multilinks: Collection<Multilink>
 
     val readPermission: SecurityRule
     val writeBeforePermission: SecurityRule
     val writeAfterPermission: SecurityRule
-
-    fun defaultRead() = Read(scalars, links.associate { it to Read.EMPTY }, multilinks.associate { it to Read.EMPTY })
 }
 
 /*

@@ -1,6 +1,6 @@
-package com.ivieleague.kotlin.server.model
+package com.ivieleague.kotlin.server.type
 
-class Link(
+class Multilink(
         override val key: String,
         override val description: String,
         override val startVersion: Int = 0,

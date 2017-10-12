@@ -1,7 +1,9 @@
 package com.ivieleague.kotlin.server.model
 
+import com.ivieleague.kotlin.server.type.*
+
 class Read(
-        scalars: Collection<Scalar> = listOf(),
+        primitives: Collection<Primitive> = listOf(),
         links: Map<Link, Read> = mapOf(),
         multilinks: Map<Multilink, Read> = mapOf()
 ) {
@@ -10,7 +12,7 @@ class Read(
     var startAfter: Instance? = null
     var count: Int = 100
 
-    val scalars: HashSet<Scalar> = HashSet(scalars)
+    val primitives: HashSet<Primitive> = HashSet(primitives)
     val links: HashMap<Link, Read> = HashMap(links)
     val multilinks: HashMap<Multilink, Read> = HashMap(multilinks)
 
@@ -19,8 +21,8 @@ class Read(
     }
 
     fun merge(other: Read) {
-        for (scalar in other.scalars) {
-            scalars += scalar
+        for (scalar in other.primitives) {
+            primitives += scalar
         }
         for ((link, read) in other.links) {
             val existing = links[link]
@@ -37,16 +39,16 @@ class Read(
     fun sortCondition(): Condition? {
         val startAfter = startAfter ?: return null
         return Condition.AnyConditions(sort.indices.map { index ->
-            val equalConditions = sort.subList(0, index + 1).dropLast(1).map { Condition.ScalarEqual(scalar = it.scalar, value = startAfter) }
+            val equalConditions = sort.subList(0, index + 1).dropLast(1).map { Condition.ScalarEqual(primitive = it.primitive, value = startAfter) }
             val currentSort = sort[index]
             val compareCondition = if (currentSort.ascending) {
-                Condition.ScalarGreaterThan(scalar = currentSort.scalar, lower = startAfter.scalars[currentSort.scalar] as Comparable<Comparable<*>>)
+                Condition.ScalarGreaterThan(primitive = currentSort.primitive, lower = startAfter.scalars[currentSort.primitive] as Comparable<Comparable<*>>)
             } else {
-                Condition.ScalarLessThan(scalar = currentSort.scalar, upper = startAfter.scalars[currentSort.scalar] as Comparable<Comparable<*>>)
+                Condition.ScalarLessThan(primitive = currentSort.primitive, upper = startAfter.scalars[currentSort.primitive] as Comparable<Comparable<*>>)
             }
             Condition.AllConditions(equalConditions + compareCondition)
         })
     }
 
-    fun isEmpty(): Boolean = scalars.isEmpty() && links.isEmpty() && multilinks.isEmpty()
+    fun isEmpty(): Boolean = primitives.isEmpty() && links.isEmpty() && multilinks.isEmpty()
 }

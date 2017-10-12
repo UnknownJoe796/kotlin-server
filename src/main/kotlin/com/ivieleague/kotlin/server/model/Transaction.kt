@@ -1,6 +1,8 @@
 package com.ivieleague.kotlin.server.model
 
 import com.ivieleague.kotlin.server.Fetcher
+import com.ivieleague.kotlin.server.type.Instance
+import com.ivieleague.kotlin.server.type.Table
 import com.lightningkite.kotlin.invokeAll
 
 /**
