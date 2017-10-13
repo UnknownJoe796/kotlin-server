@@ -3,8 +3,8 @@ package com.ivieleague.kotlin.server.rpc
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ivieleague.kotlin.server.exceptionWrap
-import com.ivieleague.kotlin.server.receiveJson
-import com.ivieleague.kotlin.server.respondJson
+import com.ivieleague.kotlin.server.old.receiveJson
+import com.ivieleague.kotlin.server.old.respondJson
 import org.jetbrains.ktor.application.ApplicationCall
 import org.jetbrains.ktor.http.HttpStatusCode
 import org.jetbrains.ktor.routing.Route
@@ -34,7 +34,7 @@ private fun deserializeRPCRequestAndExecute(user: Any?, mapper: ObjectMapper, tr
                             message = "No parameter '$key' found in method '$methodName'."
                     )
             )
-            parameters[key] = mapper.treeToValue(value, argument.type)
+            parameters[key] = argument.type.parse(value)
         }
     } else {
         parametersNode.elements().asSequence().forEachIndexed { index, value ->
@@ -45,7 +45,7 @@ private fun deserializeRPCRequestAndExecute(user: Any?, mapper: ObjectMapper, tr
                             message = "Incorrect number of arguments for method '$methodName'."
                     )
             )
-            parameters[argument.key] = mapper.treeToValue(value, argument.type)
+            parameters[argument.key] = argument.type.parse(value)
         }
     }
 
