@@ -1,6 +1,7 @@
 package com.ivieleague.kotlin.server.rpc
 
 import com.ivieleague.kotlin.server.type.SType
+import com.ivieleague.kotlin.server.type.TypedObject
 
 
 interface RPCMethod {
@@ -19,6 +20,6 @@ interface RPCMethod {
             val type: SType<*>
     )
 
-    operator fun invoke(user: Any?, arguments: Map<String, Any?>): Any?
+    operator fun invoke(user: TypedObject?, arguments: Map<String, Any?>): Any?
 }
 

@@ -11,4 +11,6 @@ interface SType<T : Any> {
     fun parse(node: JsonNode): T?
     fun parse(parser: JsonParser): T? = parse(parser.readValueAsTree<JsonNode>())
     fun serialize(generator: JsonGenerator, value: T?)
+
+    val dependencies: Collection<SType<*>> get() = listOf()
 }

@@ -16,6 +16,9 @@ interface SClass : SType<TypedObject> {
     val editPermission: SecurityRule get() = SecurityRules.always
     val writePermission: SecurityRule get() = SecurityRules.always
 
+    override val dependencies: Collection<SType<*>>
+        get() = fields.map { it.value.type }
+
     override val kclass get() = Map::class
     override fun parse(node: JsonNode): TypedObject? {
         if (node.isNull) return null
@@ -72,7 +75,7 @@ interface SClass : SType<TypedObject> {
             val key: String,
             val description: String,
             val type: SType<T>,
-            val default: T,
+            val default: T? = null,
             val startVersion: Int = 0,
             val endVersion: Int = Int.MAX_VALUE,
             val readPermission: SecurityRule = SecurityRules.always,

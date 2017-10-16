@@ -45,4 +45,7 @@ class SList<T : Any>(val ofType: SType<T>) : SType<List<T?>> {
     }
 
     override fun toString() = "List<$ofType>"
+
+    override val dependencies: Collection<SType<*>>
+        get() = listOf(ofType)
 }
