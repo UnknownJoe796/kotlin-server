@@ -11,6 +11,7 @@ interface SClass : SType<TypedObject> {
     val name: String
     val description: String
     val fields: Map<String, Field<*>>
+    val primaryKey: List<Field<*>> get() = listOf()
 
     val readPermission: SecurityRule get() = SecurityRules.always
     val editPermission: SecurityRule get() = SecurityRules.always

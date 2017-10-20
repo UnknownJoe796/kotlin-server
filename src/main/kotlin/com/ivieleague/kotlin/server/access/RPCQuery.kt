@@ -22,6 +22,9 @@ class RPCQuery(val dao: DAO) : RPCMethod {
             description = "The instances matching your query",
             type = SList(dao.type)
     )
+    override val potentialExceptions: Map<Int, RPCMethod.PotentialException<*>> = listOf<RPCMethod.PotentialException<*>>(
+            DAOPotentialExceptions.notAllowedRead(dao.type)
+    ).associate { it.code to it }
 
     override fun invoke(user: TypedObject?, arguments: Map<String, Any?>): List<TypedObject>
             = Transaction(user, readOnly = true).use {

@@ -9,23 +9,7 @@ interface RPCMethod {
     val arguments: List<Argument>
     val returns: Returns
     val potentialExceptions: Map<Int, PotentialException<*>>
-
-//    //builder fun
-//    fun <T: Any> potentialException(
-//            code:Int,
-//            name:String,
-//            description: String,
-//            type: SType<T>
-//    ): PotentialException<T> {
-//        val pE = PotentialException(
-//                code = code,
-//                name = name,
-//                description = description,
-//                type = type
-//        )
-//        potentialExceptions[pE.code] = pE
-//        return pE
-//    }
+    val deprecated: Boolean get() = false
 
     data class Argument(
             val key: String,
