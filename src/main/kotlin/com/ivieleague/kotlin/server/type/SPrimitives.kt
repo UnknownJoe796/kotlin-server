@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode
 object SPrimitives {
 
     val types: List<SType<*>> = listOf<SType<*>>(
+            SVoid,
             SBoolean,
             SInt,
             SLong,
@@ -28,6 +29,7 @@ object SPrimitives {
         node.isTextual -> SString
         node.isObject -> SUntypedMap
         node.isArray -> SUntypedList
+        node.isNull -> SVoid
         else -> throw IllegalArgumentException("No default for node.")
     }
 
@@ -39,6 +41,7 @@ object SPrimitives {
         JsonToken.VALUE_NUMBER_FLOAT -> SDouble
         JsonToken.VALUE_FALSE -> SBoolean
         JsonToken.VALUE_TRUE -> SBoolean
+        JsonToken.VALUE_NULL -> SVoid
         else -> throw IllegalArgumentException("No default for token $token.")
     }
 }
