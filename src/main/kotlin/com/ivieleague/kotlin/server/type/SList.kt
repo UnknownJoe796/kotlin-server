@@ -4,8 +4,9 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
+import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
-class SList<T : Any>(val ofType: SType<T>) : SType<List<T?>> {
+class SList<T : Any> private constructor(val ofType: SType<T>) : SType<List<T?>> {
     override val kclass = List::class
 
     override fun parse(parser: JsonParser): List<T?>? {
@@ -44,8 +45,16 @@ class SList<T : Any>(val ofType: SType<T>) : SType<List<T?>> {
         writeEndArray()
     }
 
-    override fun toString() = "List<$ofType>"
+    override val name: String = "List<${ofType.name}>"
+    override val description: String = "A list of ${ofType.name}."
 
     override val dependencies: Collection<SType<*>>
         get() = listOf(ofType)
+
+    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
+
+    companion object {
+        private val cache = HashMap<SType<*>, SList<*>>()
+        operator fun <T : Any> get(type: SType<T>) = cache.getOrPut(type) { SList(type) } as SList<T>
+    }
 }

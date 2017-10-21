@@ -1,6 +1,5 @@
 package com.ivieleague.kotlin.server.access
 
-import com.ivieleague.kotlin.server.type.Condition
 import com.ivieleague.kotlin.server.type.TypedObject
 
 interface Query {

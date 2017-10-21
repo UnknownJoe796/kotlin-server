@@ -4,28 +4,32 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
+import com.ivieleague.kotlin.server.type.meta.SEnumClass
+import java.util.*
 
-class SEnum(
-        val name: String,
-        val description: String,
-        val values: Set<SEnum.Value>
-) : SType<SEnum.Value> {
-    override val kclass = Byte::class
+interface SEnum : SType<SEnum.Value> {
 
-    data class Value(val name: String, val description: String, val value: Byte)
+    override val name: String
+    override val description: String
+    val values: Set<SEnum.Value>
 
-    val indexedByValue: Map<Byte, Value> = values.associateBy { it.value }
-    val indexedByName: Map<String, Value> = values.associateBy { it.name }
+    override val kclass get() = Byte::class
 
-    operator fun get(byte: Byte): Value = indexedByValue[byte]!!
-    operator fun get(name: String): Value = indexedByName[name]!!
+    data class Value(val name: String, val description: String)
 
-    override fun parse(parser: JsonParser) = if (parser.currentToken == JsonToken.VALUE_NULL) null else indexedByName[parser.text]
-    override fun parse(node: JsonNode): SEnum.Value? = if (node.isNull) null else indexedByName[node.asText()]
+    operator fun get(name: String): Value? = getNameIndex(this)[name]
+
+    override fun parse(parser: JsonParser) = if (parser.currentToken == JsonToken.VALUE_NULL) null else get(parser.text)
+    override fun parse(node: JsonNode): SEnum.Value? = if (node.isNull) null else get(node.asText())
+
+    override fun reflect(user: TypedObject?): TypedObject = SEnumClass.make(this)
 
     override fun serialize(generator: JsonGenerator, value: SEnum.Value?) = generator.writeNullOr(value) {
         writeString(it.name)
     }
 
-    override fun toString(): String = name
+    companion object {
+        private val nameIndexes = WeakHashMap<SEnum, Map<String, Value>>()
+        fun getNameIndex(enum: SEnum) = nameIndexes.getOrPut(enum) { enum.values.associateBy { it.name } }
+    }
 }

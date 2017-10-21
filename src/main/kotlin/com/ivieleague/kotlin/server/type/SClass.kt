@@ -4,18 +4,13 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
-import com.ivieleague.kotlin.server.SecurityRule
-import com.ivieleague.kotlin.server.SecurityRules
+import com.ivieleague.kotlin.server.type.meta.SClassClass
 
 interface SClass : SType<TypedObject> {
-    val name: String
-    val description: String
+    override val name: String
+    override val description: String
     val fields: Map<String, Field<*>>
     val primaryKey: List<Field<*>> get() = listOf()
-
-    val readPermission: SecurityRule get() = SecurityRules.always
-    val editPermission: SecurityRule get() = SecurityRules.always
-    val writePermission: SecurityRule get() = SecurityRules.always
 
     override val dependencies: Collection<SType<*>>
         get() = fields.map { it.value.type }
@@ -76,12 +71,8 @@ interface SClass : SType<TypedObject> {
             val key: String,
             val description: String,
             val type: SType<T>,
-            val default: T? = null,
-            val startVersion: Int = 0,
-            val endVersion: Int = Int.MAX_VALUE,
-            val readPermission: SecurityRule = SecurityRules.always,
-            val editPermission: SecurityRule = SecurityRules.always,
-            val writePermission: SecurityRule = SecurityRules.always,
-            val embed: Boolean = false
+            val default: T? = null
     )
+
+    override fun reflect(user: TypedObject?): TypedObject = SClassClass.make(this)
 }

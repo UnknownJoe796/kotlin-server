@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
+import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
 object SUntypedMap : SType<Map<String, Any?>> {
     override val kclass = Map::class
@@ -46,5 +47,7 @@ object SUntypedMap : SType<Map<String, Any?>> {
         writeEndObject()
     }
 
-    override fun toString() = "Map"
+    override val name: String = "Map"
+    override val description: String = "An untyped map."
+    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
 }

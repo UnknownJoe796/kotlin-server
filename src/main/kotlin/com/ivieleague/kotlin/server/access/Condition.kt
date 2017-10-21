@@ -1,4 +1,6 @@
-package com.ivieleague.kotlin.server.type
+package com.ivieleague.kotlin.server.access
+
+import com.ivieleague.kotlin.server.type.TypedObject
 
 interface Condition : (TypedObject) -> Boolean {
     object Always : Condition {

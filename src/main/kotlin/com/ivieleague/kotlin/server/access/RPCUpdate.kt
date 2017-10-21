@@ -1,7 +1,6 @@
 package com.ivieleague.kotlin.server.access
 
 import com.ivieleague.kotlin.server.rpc.RPCMethod
-import com.ivieleague.kotlin.server.type.SList
 import com.ivieleague.kotlin.server.type.TypedObject
 
 class RPCUpdate(val dao: DAO) : RPCMethod {
@@ -14,8 +13,8 @@ class RPCUpdate(val dao: DAO) : RPCMethod {
             )
     )
     override val returns: RPCMethod.Returns = RPCMethod.Returns(
-            description = "The instances matching your query",
-            type = SList(dao.type)
+            description = "The instance representing your update",
+            type = dao.type
     )
     override val potentialExceptions: Map<Int, RPCMethod.PotentialException<*>> = listOf<RPCMethod.PotentialException<*>>(
             DAOPotentialExceptions.notAllowedWrite(dao.type),

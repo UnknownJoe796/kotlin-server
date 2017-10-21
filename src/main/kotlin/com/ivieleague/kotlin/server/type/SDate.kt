@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
+import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 import java.time.ZonedDateTime
 
 object SDate : SType<ZonedDateTime> {
@@ -15,5 +16,7 @@ object SDate : SType<ZonedDateTime> {
         writeString(format.format(it))
     }
 
-    override fun toString() = "Date"
+    override val name: String = "Date"
+    override val description: String = "A date/time/timezone value."
+    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
 }

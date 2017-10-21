@@ -1,7 +1,6 @@
 package com.ivieleague.kotlin.server.access
 
 import com.ivieleague.kotlin.server.type.SClass
-import com.ivieleague.kotlin.server.type.STypedCondition
 
 class SWriteNotAllowed private constructor(val type: SClass) : SClass {
     override val name: String
@@ -18,7 +17,7 @@ class SWriteNotAllowed private constructor(val type: SClass) : SClass {
             SClass.Field(
                     key = "condition",
                     description = "The condition under which you can perform an operation like this.",
-                    type = STypedCondition[type],
+                    type = SCondition[type],
                     default = null
             )
     ).associate { it.key to it }

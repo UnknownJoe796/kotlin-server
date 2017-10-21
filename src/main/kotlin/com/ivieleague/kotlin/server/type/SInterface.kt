@@ -2,18 +2,13 @@ package com.ivieleague.kotlin.server.type
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.JsonNode
-import com.ivieleague.kotlin.server.SecurityRule
-import com.ivieleague.kotlin.server.SecurityRules
+import com.ivieleague.kotlin.server.type.meta.SInterfaceClass
 
 interface SInterface : SType<TypedObject> {
-    val name: String
-    val description: String
+    override val name: String
+    override val description: String
     val fields: Map<String, SClass.Field<*>>
     val implementers: Map<String, SClass>
-
-    val readPermission: SecurityRule get() = SecurityRules.always
-    val editPermission: SecurityRule get() = SecurityRules.always
-    val writePermission: SecurityRule get() = SecurityRules.always
 
     override val kclass get() = Map::class
     override fun parse(node: JsonNode): TypedObject? {
@@ -46,4 +41,6 @@ interface SInterface : SType<TypedObject> {
 
     override val dependencies: Collection<SType<*>>
         get() = implementers.values
+
+    override fun reflect(user: TypedObject?): TypedObject = SInterfaceClass.make(this)
 }

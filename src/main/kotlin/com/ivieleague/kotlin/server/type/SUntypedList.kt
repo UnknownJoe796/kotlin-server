@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
+import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
 object SUntypedList : SType<List<Any?>> {
     override val kclass = List::class
@@ -45,5 +46,7 @@ object SUntypedList : SType<List<Any?>> {
         writeEndArray()
     }
 
-    override fun toString() = "List"
+    override val name: String = "List"
+    override val description: String = "An untyped list."
+    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
 }
