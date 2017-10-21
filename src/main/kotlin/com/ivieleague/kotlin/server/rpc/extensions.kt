@@ -3,8 +3,8 @@ package com.ivieleague.kotlin.server.rpc
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ivieleague.kotlin.server.exceptionWrap
-import com.ivieleague.kotlin.server.old.receiveJson
-import com.ivieleague.kotlin.server.old.respondJson
+import com.ivieleague.kotlin.server.receiveJson
+import com.ivieleague.kotlin.server.respondJson
 import com.ivieleague.kotlin.server.type.TypedObject
 import org.jetbrains.ktor.application.ApplicationCall
 import org.jetbrains.ktor.http.HttpStatusCode

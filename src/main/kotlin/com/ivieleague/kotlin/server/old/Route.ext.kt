@@ -3,8 +3,8 @@
 //import com.ivieleague.kotlin.server.exceptionBadRequest
 //import com.ivieleague.kotlin.server.exceptionWrap
 //import com.ivieleague.kotlin.server.old.model.Schema
-//import com.ivieleague.kotlin.server.old.receiveJson
-//import com.ivieleague.kotlin.server.old.respondJson
+//import com.ivieleague.kotlin.server.receiveJson
+//import com.ivieleague.kotlin.server.respondJson
 //import com.ivieleague.kotlin.server.old.type.Primitive
 //import org.jetbrains.ktor.routing.Route
 //import org.jetbrains.ktor.routing.post
