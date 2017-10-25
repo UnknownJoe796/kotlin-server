@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
 object SUntypedList : SType<List<Any?>> {
@@ -44,6 +45,20 @@ object SUntypedList : SType<List<Any?>> {
             }
         }
         writeEndArray()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun serialize(factory: JsonNodeFactory, value: List<Any?>?) = factory.nullNodeOr(value) {
+        arrayNode().apply {
+            for (item in it) {
+                if (item == null)
+                    add(nullNode())
+                else {
+                    val type = SPrimitives.getDefault(it.javaClass) as SType<Any>
+                    add(type.serialize(factory, item))
+                }
+            }
+        }
     }
 
     override val name: String = "List"

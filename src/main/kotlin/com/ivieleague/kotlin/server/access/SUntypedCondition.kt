@@ -138,32 +138,32 @@ object SUntypedCondition : SInterface {
     ).associate { it.name to it }
 
 
-    fun unwrap(condition: Condition): TypedObject {
+    fun unwrap(condition: Condition): SimpleTypedObject {
         return when (condition) {
-            Condition.Always -> TypedObject(always)
-            Condition.Never -> TypedObject(never)
-            is Condition.AllConditions -> TypedObject(all).apply {
+            Condition.Always -> SimpleTypedObject(always)
+            Condition.Never -> SimpleTypedObject(never)
+            is Condition.AllConditions -> SimpleTypedObject(all).apply {
                 this["conditions"] = condition.others.map { unwrap(it) }
             }
-            is Condition.AnyCondition -> TypedObject(any).apply {
+            is Condition.AnyCondition -> SimpleTypedObject(any).apply {
                 this["conditions"] = condition.others.map { unwrap(it) }
             }
-            is Condition.Equal -> TypedObject(equal).apply {
+            is Condition.Equal -> SimpleTypedObject(equal).apply {
                 this["value"] = condition.value as Map<String, Any?>
             }
-            is Condition.NotEqual -> TypedObject(notEqual).apply {
+            is Condition.NotEqual -> SimpleTypedObject(notEqual).apply {
                 this["value"] = condition.value as Map<String, Any?>
             }
-            is Condition.GreaterThanOrEqualTo -> TypedObject(greaterThanOrEqualTo).apply {
+            is Condition.GreaterThanOrEqualTo -> SimpleTypedObject(greaterThanOrEqualTo).apply {
                 this["value"] = condition.value as Map<String, Any?>
             }
-            is Condition.LessThanOrEqualTo -> TypedObject(lessThanOrEqualTo).apply {
+            is Condition.LessThanOrEqualTo -> SimpleTypedObject(lessThanOrEqualTo).apply {
                 this["value"] = condition.value as Map<String, Any?>
             }
-            is Condition.GreaterThan -> TypedObject(greaterThan).apply {
+            is Condition.GreaterThan -> SimpleTypedObject(greaterThan).apply {
                 this["value"] = condition.value as Map<String, Any?>
             }
-            is Condition.LessThan -> TypedObject(lessThan).apply {
+            is Condition.LessThan -> SimpleTypedObject(lessThan).apply {
                 this["value"] = condition.value as Map<String, Any?>
             }
             else -> throw IllegalArgumentException("Condition not recognized.")

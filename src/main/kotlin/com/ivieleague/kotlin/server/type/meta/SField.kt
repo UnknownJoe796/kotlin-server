@@ -2,7 +2,7 @@ package com.ivieleague.kotlin.server.type.meta
 
 import com.ivieleague.kotlin.server.type.SClass
 import com.ivieleague.kotlin.server.type.SString
-import com.ivieleague.kotlin.server.type.TypedObject
+import com.ivieleague.kotlin.server.type.SimpleTypedObject
 
 object SField : SClass {
     override val name: String = "Field"
@@ -39,7 +39,7 @@ object SField : SClass {
             fieldType
     ).associate { it.key to it }
 
-    fun make(field: SClass.Field<*>) = TypedObject(this).apply {
+    fun make(field: SClass.Field<*>) = SimpleTypedObject(this).apply {
         this[fieldName] = field.key
         this[fieldDescription] = field.description
         this[fieldType] = field.type.name

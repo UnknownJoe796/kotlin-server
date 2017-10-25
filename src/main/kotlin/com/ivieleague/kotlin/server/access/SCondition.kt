@@ -3,12 +3,12 @@ package com.ivieleague.kotlin.server.access
 import com.ivieleague.kotlin.server.type.SClass
 import com.ivieleague.kotlin.server.type.SInterface
 import com.ivieleague.kotlin.server.type.SList
-import com.ivieleague.kotlin.server.type.TypedObject
+import com.ivieleague.kotlin.server.type.SimpleTypedObject
 import com.lightningkite.kotlin.cast
 
 class SCondition private constructor(val thisType: SClass) : SInterface {
     interface SConditionClass : SClass {
-        fun construct(typedObject: TypedObject): Condition
+        fun construct(typedObject: SimpleTypedObject): Condition
     }
 
     override val name: String = "Condition<${thisType.name}>"
@@ -19,14 +19,14 @@ class SCondition private constructor(val thisType: SClass) : SInterface {
         override val name: String = "Condition<${thisType.name}>.Always"
         override val description: String = "Always."
         override val fields: Map<String, SClass.Field<*>> = mapOf()
-        override fun construct(typedObject: TypedObject): Condition = Condition.Always
+        override fun construct(typedObject: SimpleTypedObject): Condition = Condition.Always
     }
 
     val never = object : SConditionClass {
         override val name: String = "Condition<${thisType.name}>.Never"
         override val description: String = "Never."
         override val fields: Map<String, SClass.Field<*>> = mapOf()
-        override fun construct(typedObject: TypedObject): Condition = Condition.Never
+        override fun construct(typedObject: SimpleTypedObject): Condition = Condition.Never
     }
 
     val any = object : SConditionClass {
@@ -41,8 +41,8 @@ class SCondition private constructor(val thisType: SClass) : SInterface {
                 )
         ).associate { it.key to it }
 
-        override fun construct(typedObject: TypedObject): Condition = Condition.AnyCondition(
-                typedObject["conditions"]!!.cast<List<TypedObject>>().map { wrap(it) }
+        override fun construct(typedObject: SimpleTypedObject): Condition = Condition.AnyCondition(
+                typedObject["conditions"]!!.cast<List<SimpleTypedObject>>().map { wrap(it) }
         )
     }
 
@@ -58,8 +58,8 @@ class SCondition private constructor(val thisType: SClass) : SInterface {
                 )
         ).associate { it.key to it }
 
-        override fun construct(typedObject: TypedObject): Condition = Condition.AllConditions(
-                typedObject["conditions"]!!.cast<List<TypedObject>>().map { wrap(it) }
+        override fun construct(typedObject: SimpleTypedObject): Condition = Condition.AllConditions(
+                typedObject["conditions"]!!.cast<List<SimpleTypedObject>>().map { wrap(it) }
         )
     }
 
@@ -71,12 +71,12 @@ class SCondition private constructor(val thisType: SClass) : SInterface {
                         key = "value",
                         description = "The list of conditions to check.",
                         type = thisType,
-                        default = TypedObject(thisType)
+                        default = SimpleTypedObject(thisType)
                 )
         ).associate { it.key to it }
 
-        override fun construct(typedObject: TypedObject): Condition
-                = Condition.Equal(typedObject["value"] as? TypedObject ?: TypedObject(thisType))
+        override fun construct(typedObject: SimpleTypedObject): Condition
+                = Condition.Equal(typedObject["value"] as? SimpleTypedObject ?: SimpleTypedObject(thisType))
     }
 
     val notEqual = object : SConditionClass {
@@ -87,12 +87,12 @@ class SCondition private constructor(val thisType: SClass) : SInterface {
                         key = "value",
                         description = "The list of conditions to check.",
                         type = thisType,
-                        default = TypedObject(thisType)
+                        default = SimpleTypedObject(thisType)
                 )
         ).associate { it.key to it }
 
-        override fun construct(typedObject: TypedObject): Condition
-                = Condition.NotEqual(typedObject["value"] as? TypedObject ?: TypedObject(thisType))
+        override fun construct(typedObject: SimpleTypedObject): Condition
+                = Condition.NotEqual(typedObject["value"] as? SimpleTypedObject ?: SimpleTypedObject(thisType))
     }
 
     val greaterThanOrEqualTo = object : SConditionClass {
@@ -103,12 +103,12 @@ class SCondition private constructor(val thisType: SClass) : SInterface {
                         key = "value",
                         description = "The list of conditions to check.",
                         type = thisType,
-                        default = TypedObject(thisType)
+                        default = SimpleTypedObject(thisType)
                 )
         ).associate { it.key to it }
 
-        override fun construct(typedObject: TypedObject): Condition
-                = Condition.NotEqual(typedObject["value"] as? TypedObject ?: TypedObject(thisType))
+        override fun construct(typedObject: SimpleTypedObject): Condition
+                = Condition.NotEqual(typedObject["value"] as? SimpleTypedObject ?: SimpleTypedObject(thisType))
     }
 
     val lessThanOrEqualTo = object : SConditionClass {
@@ -119,12 +119,12 @@ class SCondition private constructor(val thisType: SClass) : SInterface {
                         key = "value",
                         description = "The list of conditions to check.",
                         type = thisType,
-                        default = TypedObject(thisType)
+                        default = SimpleTypedObject(thisType)
                 )
         ).associate { it.key to it }
 
-        override fun construct(typedObject: TypedObject): Condition
-                = Condition.NotEqual(typedObject["value"] as? TypedObject ?: TypedObject(thisType))
+        override fun construct(typedObject: SimpleTypedObject): Condition
+                = Condition.NotEqual(typedObject["value"] as? SimpleTypedObject ?: SimpleTypedObject(thisType))
     }
 
     val greaterThan = object : SConditionClass {
@@ -135,12 +135,12 @@ class SCondition private constructor(val thisType: SClass) : SInterface {
                         key = "value",
                         description = "The list of conditions to check.",
                         type = thisType,
-                        default = TypedObject(thisType)
+                        default = SimpleTypedObject(thisType)
                 )
         ).associate { it.key to it }
 
-        override fun construct(typedObject: TypedObject): Condition
-                = Condition.NotEqual(typedObject["value"] as? TypedObject ?: TypedObject(thisType))
+        override fun construct(typedObject: SimpleTypedObject): Condition
+                = Condition.NotEqual(typedObject["value"] as? SimpleTypedObject ?: SimpleTypedObject(thisType))
     }
 
     val lessThan = object : SConditionClass {
@@ -151,12 +151,12 @@ class SCondition private constructor(val thisType: SClass) : SInterface {
                         key = "value",
                         description = "The list of conditions to check.",
                         type = thisType,
-                        default = TypedObject(thisType)
+                        default = SimpleTypedObject(thisType)
                 )
         ).associate { it.key to it }
 
-        override fun construct(typedObject: TypedObject): Condition
-                = Condition.NotEqual(typedObject["value"] as? TypedObject ?: TypedObject(thisType))
+        override fun construct(typedObject: SimpleTypedObject): Condition
+                = Condition.NotEqual(typedObject["value"] as? SimpleTypedObject ?: SimpleTypedObject(thisType))
     }
 
     override val implementers: Map<String, SClass> = listOf<SClass>(
@@ -177,7 +177,7 @@ class SCondition private constructor(val thisType: SClass) : SInterface {
         private val cache = HashMap<SClass, SCondition>()
         operator fun get(type: SClass) = cache.getOrPut(type) { SCondition(type) }
 
-        fun wrap(typedObject: TypedObject): Condition {
+        fun wrap(typedObject: SimpleTypedObject): Condition {
             return (typedObject.type as SConditionClass).construct(typedObject)
         }
     }

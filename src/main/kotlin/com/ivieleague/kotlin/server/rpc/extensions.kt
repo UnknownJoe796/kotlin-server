@@ -4,13 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.ivieleague.kotlin.server.exceptionWrap
 import com.ivieleague.kotlin.server.receiveJson
 import com.ivieleague.kotlin.server.respondJson
-import com.ivieleague.kotlin.server.type.TypedObject
+import com.ivieleague.kotlin.server.type.SimpleTypedObject
 import org.jetbrains.ktor.application.ApplicationCall
 import org.jetbrains.ktor.http.HttpStatusCode
 import org.jetbrains.ktor.routing.Route
 import org.jetbrains.ktor.routing.post
 
-private fun deserializeRPCRequestAndExecute(user: TypedObject?, tree: JsonNode, methods: Map<String, RPCMethod>): RPCResponse {
+private fun deserializeRPCRequestAndExecute(user: SimpleTypedObject?, tree: JsonNode, methods: Map<String, RPCMethod>): RPCResponse {
     val id = tree.get("id").asInt()
 
     val methodName = tree.get("method").asText()
@@ -68,7 +68,7 @@ private fun deserializeRPCRequestAndExecute(user: TypedObject?, tree: JsonNode, 
     }
 }
 
-fun Route.rpc(methods: Map<String, RPCMethod>, userGetter: (ApplicationCall) -> TypedObject? = { null }) {
+fun Route.rpc(methods: Map<String, RPCMethod>, userGetter: (ApplicationCall) -> SimpleTypedObject? = { null }) {
     post() {
         exceptionWrap {
             val user = userGetter(it)

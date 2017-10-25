@@ -75,7 +75,7 @@ object SRPCMethod : SClass {
                 argType
         ).associate { it.key to it }
 
-        fun make(item: RPCMethod.Argument): TypedObject = TypedObject(Argument).apply {
+        fun make(item: RPCMethod.Argument): SimpleTypedObject = SimpleTypedObject(Argument).apply {
             this[argKey] = item.key
             this[argDescription] = item.description
             this[argType] = item.type.name
@@ -104,7 +104,7 @@ object SRPCMethod : SClass {
                 argType
         ).associate { it.key to it }
 
-        fun make(item: RPCMethod.Returns): TypedObject = TypedObject(Returns).apply {
+        fun make(item: RPCMethod.Returns): SimpleTypedObject = SimpleTypedObject(Returns).apply {
             this[argDescription] = item.description
             this[argType] = item.type.name
         }
@@ -146,7 +146,7 @@ object SRPCMethod : SClass {
                 argType
         ).associate { it.key to it }
 
-        fun make(item: RPCMethod.PotentialException<*>): TypedObject = TypedObject(PotentialException).apply {
+        fun make(item: RPCMethod.PotentialException<*>): SimpleTypedObject = SimpleTypedObject(PotentialException).apply {
             this[argCode] = item.code
             this[argName] = item.name
             this[argDescription] = item.description
@@ -154,7 +154,7 @@ object SRPCMethod : SClass {
         }
     }
 
-    fun make(item: RPCMethod): TypedObject = TypedObject(SRPCMethod).apply {
+    fun make(item: RPCMethod): SimpleTypedObject = SimpleTypedObject(SRPCMethod).apply {
         this[methodDescription] = item.description
         this[methodReturns] = Returns.make(item.returns)
         this[methodArguments] = item.arguments.map { Argument.make(it) }

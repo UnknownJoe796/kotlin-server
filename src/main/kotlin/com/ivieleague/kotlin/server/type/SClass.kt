@@ -18,7 +18,7 @@ interface SClass : SType<TypedObject> {
     override val kclass get() = Map::class
     override fun parse(node: JsonNode): TypedObject? {
         if (node.isNull) return null
-        val result = TypedObject(this)
+        val result = SimpleTypedObject(this)
         for ((key, value) in node.fields()) {
             val field = fields[key]
             if (field == null) {
@@ -35,7 +35,7 @@ interface SClass : SType<TypedObject> {
 
         assert(parser.currentToken == JsonToken.START_OBJECT)
 
-        val result = TypedObject(this)
+        val result = SimpleTypedObject(this)
         var token = parser.nextValue()
         while (token != JsonToken.END_OBJECT) {
             val key = parser.currentName
@@ -53,15 +53,14 @@ interface SClass : SType<TypedObject> {
     @Suppress("UNCHECKED_CAST")
     override fun serialize(generator: JsonGenerator, value: TypedObject?) = generator.writeNullOr(value) {
         writeStartObject()
-        for ((key, item) in it.entries) {
+        for ((key, field) in fields) {
             writeFieldName(key)
 
-            val field = fields[key]
+            val item: Any? = it[field]
             if (item == null)
                 writeNull()
             else {
-                val type = (field?.type ?: SPrimitives.getDefault(it.javaClass)) as SType<Any>
-                type.serialize(generator, item)
+                (field.type as SType<Any>).serialize(generator, item)
             }
         }
         writeEndObject()

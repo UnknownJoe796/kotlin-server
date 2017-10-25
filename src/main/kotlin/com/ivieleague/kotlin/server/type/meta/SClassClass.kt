@@ -2,7 +2,7 @@ package com.ivieleague.kotlin.server.type.meta
 
 import com.ivieleague.kotlin.server.type.SClass
 import com.ivieleague.kotlin.server.type.SMap
-import com.ivieleague.kotlin.server.type.TypedObject
+import com.ivieleague.kotlin.server.type.SimpleTypedObject
 
 object SClassClass : SClass {
     override val name: String = "Class"
@@ -21,7 +21,7 @@ object SClassClass : SClass {
             fieldFields
     ).associate { it.key to it }
 
-    fun make(type: SClass) = TypedObject(this).apply {
+    fun make(type: SClass) = SimpleTypedObject(this).apply {
         this[STypeInterface.fieldName] = type.name
         this[STypeInterface.fieldDescription] = type.description
         this[fieldFields] = type.fields.mapValues { SField.make(it.value) }
