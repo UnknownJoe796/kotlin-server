@@ -39,7 +39,10 @@ object SRPCMethod : SClass {
 
     override val fields: Map<String, SClass.Field<*>> = listOf<SClass.Field<*>>(
             methodDescription,
-            methodArguments
+            methodArguments,
+            methodReturns,
+            methodExceptions,
+            methodDeprecated
     ).associate { it.key to it }
 
 

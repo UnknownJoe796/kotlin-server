@@ -30,6 +30,8 @@ val BsonObjectMapper = ObjectMapper(BsonFactory())
 val MessagePackObjectMapper = ObjectMapper(MessagePackFactory())
         .registerModule(KotlinServerModelsModule)!!
 
+fun ApplicationCall.respondJsonGenerator(): Unit = TODO()
+
 suspend fun ApplicationCall.respondJson(result: Any?, statusCode: HttpStatusCode = HttpStatusCode.OK) {
     val contentType = request.accept()?.let { ContentType.parse(it) }
     when (contentType) {
