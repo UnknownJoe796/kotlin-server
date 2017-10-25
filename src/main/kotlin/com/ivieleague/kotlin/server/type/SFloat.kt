@@ -13,5 +13,5 @@ object SFloat : SType<Float> {
     override fun serialize(generator: JsonGenerator, value: Float?) = generator.writeNullOr(value) { writeNumber(it) }
     override val name: String = "Float"
     override val description: String = "A single-precision floating point number."
-    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
+    override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 }

@@ -13,5 +13,5 @@ object SDouble : SType<Double> {
     override fun serialize(generator: JsonGenerator, value: Double?) = generator.writeNullOr(value) { writeNumber(it) }
     override val name: String = "Double"
     override val description: String = "A double-precision floating point number."
-    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
+    override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 }

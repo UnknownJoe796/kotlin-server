@@ -27,7 +27,7 @@ object SUntypedCondition : SInterface {
                 SClass.Field(
                         key = "conditions",
                         description = "The list of conditions to check.",
-                        type = SList(SUntypedCondition),
+                        type = SList[SUntypedCondition],
                         default = listOf()
                 )
         ).associate { it.key to it }
@@ -40,7 +40,7 @@ object SUntypedCondition : SInterface {
                 SClass.Field(
                         key = "conditions",
                         description = "The list of conditions to check.",
-                        type = SList(SUntypedCondition),
+                        type = SList[SUntypedCondition],
                         default = listOf()
                 )
         ).associate { it.key to it }

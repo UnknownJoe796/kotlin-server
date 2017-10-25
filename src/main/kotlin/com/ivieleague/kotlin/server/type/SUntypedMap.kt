@@ -49,5 +49,5 @@ object SUntypedMap : SType<Map<String, Any?>> {
 
     override val name: String = "Map"
     override val description: String = "An untyped map."
-    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
+    override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 }

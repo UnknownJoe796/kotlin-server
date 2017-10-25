@@ -36,7 +36,7 @@ class SCondition private constructor(val thisType: SClass) : SInterface {
                 SClass.Field(
                         key = "conditions",
                         description = "The list of conditions to check.",
-                        type = SList(this@SCondition),
+                        type = SList[this@SCondition],
                         default = listOf()
                 )
         ).associate { it.key to it }
@@ -53,7 +53,7 @@ class SCondition private constructor(val thisType: SClass) : SInterface {
                 SClass.Field(
                         key = "conditions",
                         description = "The list of conditions to check.",
-                        type = SList(this@SCondition),
+                        type = SList[this@SCondition],
                         default = listOf()
                 )
         ).associate { it.key to it }

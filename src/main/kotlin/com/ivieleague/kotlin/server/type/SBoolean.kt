@@ -13,5 +13,5 @@ object SBoolean : SType<Boolean> {
     override fun serialize(generator: JsonGenerator, value: Boolean?) = generator.writeNullOr(value) { writeBoolean(it) }
     override val name: String = "Boolean"
     override val description: String = "A boolean value, which can be either true or false."
-    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
+    override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 }

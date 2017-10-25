@@ -52,7 +52,7 @@ class SMap<T : Any> private constructor(val ofType: SType<T>) : SType<Map<String
     override val dependencies: Collection<SType<*>>
         get() = listOf(ofType)
 
-    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
+    override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 
 
     companion object {

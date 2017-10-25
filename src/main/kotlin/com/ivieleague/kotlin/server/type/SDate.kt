@@ -18,5 +18,5 @@ object SDate : SType<ZonedDateTime> {
 
     override val name: String = "Date"
     override val description: String = "A date/time/timezone value."
-    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
+    override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 }

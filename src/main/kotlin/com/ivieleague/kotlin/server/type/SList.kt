@@ -51,7 +51,7 @@ class SList<T : Any> private constructor(val ofType: SType<T>) : SType<List<T?>>
     override val dependencies: Collection<SType<*>>
         get() = listOf(ofType)
 
-    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
+    override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 
     companion object {
         private val cache = HashMap<SType<*>, SList<*>>()

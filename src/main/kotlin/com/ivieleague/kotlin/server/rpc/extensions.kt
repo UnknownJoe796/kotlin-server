@@ -24,7 +24,13 @@ private fun deserializeRPCRequestAndExecute(user: TypedObject?, mapper: ObjectMa
     )
 
     val parameters = HashMap<String, Any?>()
-    val parametersNode = tree.get("parameters")
+    val parametersNode = tree.get("params") ?: return RPCResponse(
+            id = id,
+            error = RPCError(
+                    code = RPCError.CODE_INVALID_PARAMS,
+                    message = "Params not found."
+            )
+    )
 
     if (parametersNode.isObject) {
         for ((key, value) in parametersNode.fields()) {
@@ -80,6 +86,7 @@ fun Route.rpc(mapper: ObjectMapper, methods: Map<String, RPCMethod>, userGetter:
                     it.respondJson(results)
                 }
             } catch (e: Exception) {
+                e.printStackTrace()
                 it.respondJson(RPCResponse(
                         id = 0,
                         error = RPCError(

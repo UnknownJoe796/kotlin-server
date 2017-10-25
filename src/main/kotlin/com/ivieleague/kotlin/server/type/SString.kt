@@ -13,5 +13,5 @@ object SString : SType<String> {
     override fun serialize(generator: JsonGenerator, value: String?) = generator.writeNullOr(value) { writeString(it) }
     override val name: String = "String"
     override val description: String = "A series of characters.  UTF-8 expected."
-    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
+    override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 }

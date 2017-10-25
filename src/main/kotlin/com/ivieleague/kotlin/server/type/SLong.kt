@@ -13,5 +13,5 @@ object SLong : SType<Long> {
     override fun serialize(generator: JsonGenerator, value: Long?) = generator.writeNullOr(value) { writeNumber(it) }
     override val name: String = "Long"
     override val description: String = "An integer value of 64 bits."
-    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
+    override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 }

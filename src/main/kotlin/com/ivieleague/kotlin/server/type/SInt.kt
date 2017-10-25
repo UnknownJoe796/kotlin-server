@@ -13,5 +13,5 @@ object SInt : SType<Int> {
     override fun serialize(generator: JsonGenerator, value: Int?) = generator.writeNullOr(value) { writeNumber(it) }
     override val name: String = "Int"
     override val description: String = "An integer value of 32 bits."
-    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
+    override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 }

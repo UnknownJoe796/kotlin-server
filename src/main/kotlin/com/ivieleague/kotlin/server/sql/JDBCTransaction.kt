@@ -1,6 +1,6 @@
 package com.ivieleague.kotlin.server.sql
 
-import com.ivieleague.kotlin.server.old.model.Transaction
+import com.ivieleague.kotlin.server.access.Transaction
 import java.sql.Connection
 import java.util.*
 

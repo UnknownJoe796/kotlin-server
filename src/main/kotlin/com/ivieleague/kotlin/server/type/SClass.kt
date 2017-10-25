@@ -74,5 +74,5 @@ interface SClass : SType<TypedObject> {
             val default: T? = null
     )
 
-    override fun reflect(user: TypedObject?): TypedObject = SClassClass.make(this)
+    override fun reflect(): TypedObject = SClassClass.make(this)
 }

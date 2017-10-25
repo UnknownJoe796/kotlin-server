@@ -48,5 +48,5 @@ object SUntypedList : SType<List<Any?>> {
 
     override val name: String = "List"
     override val description: String = "An untyped list."
-    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
+    override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 }

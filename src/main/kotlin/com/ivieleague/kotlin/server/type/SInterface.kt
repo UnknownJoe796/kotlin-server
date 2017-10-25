@@ -42,5 +42,5 @@ interface SInterface : SType<TypedObject> {
     override val dependencies: Collection<SType<*>>
         get() = implementers.values
 
-    override fun reflect(user: TypedObject?): TypedObject = SInterfaceClass.make(this)
+    override fun reflect(): TypedObject = SInterfaceClass.make(this)
 }

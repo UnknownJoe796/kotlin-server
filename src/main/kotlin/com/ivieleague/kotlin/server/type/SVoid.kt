@@ -12,5 +12,5 @@ object SVoid : SType<Unit> {
     override fun serialize(generator: JsonGenerator, value: Unit?) = generator.writeNull()
     override val name: String = "Void"
     override val description: String = "A type used to indicate no data."
-    override fun reflect(user: TypedObject?): TypedObject = SPrimitiveClass.make(this)
+    override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 }

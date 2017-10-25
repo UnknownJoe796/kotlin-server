@@ -12,7 +12,7 @@ interface SType<T : Any> {
 
     val kclass: KClass<*>
     val jclass: Class<*> get() = kclass.java
-    fun reflect(user: TypedObject?): TypedObject
+    fun reflect(): TypedObject
 
     fun parse(node: JsonNode): T?
     fun parse(parser: JsonParser): T? = parse(parser.readValueAsTree<JsonNode>())
