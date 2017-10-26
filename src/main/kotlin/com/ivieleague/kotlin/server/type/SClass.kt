@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.ivieleague.kotlin.server.JsonGlobals
 import com.ivieleague.kotlin.server.type.meta.SClassClass
 
 interface SClass : SType<TypedObject> {
@@ -16,7 +19,9 @@ interface SClass : SType<TypedObject> {
         get() = fields.map { it.value.type }
 
     override val kclass get() = Map::class
-    override fun parse(node: JsonNode): TypedObject? {
+
+    override fun parse(node: JsonNode): TypedObject? = parseDirect(JsonGlobals.jsonNodeFactory, node)
+    fun parseSimple(node: JsonNode): SimpleTypedObject? {
         if (node.isNull) return null
         val result = SimpleTypedObject(this)
         for ((key, value) in node.fields()) {
@@ -28,6 +33,11 @@ interface SClass : SType<TypedObject> {
             }
         }
         return result
+    }
+
+    fun parseDirect(factory: JsonNodeFactory, node: JsonNode): JsonTypedObject? {
+        return if (node.isNull) null
+        else JsonTypedObject(this, factory, node as ObjectNode)
     }
 
     override fun parse(parser: JsonParser): TypedObject? {
@@ -64,6 +74,23 @@ interface SClass : SType<TypedObject> {
             }
         }
         writeEndObject()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun serialize(factory: JsonNodeFactory, value: TypedObject?): JsonNode {
+        return if (value is JsonTypedObject) value.source
+        else factory.nullNodeOr(value) {
+            objectNode().apply {
+                for ((key, field) in fields) {
+                    val item = it[field]
+                    if (item == null)
+                        set(key, nullNode())
+                    else {
+                        set(key, (field.type as SType<Any>).serialize(factory, item))
+                    }
+                }
+            }
+        }
     }
 
     data class Field<T : Any>(

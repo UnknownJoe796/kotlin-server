@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.ivieleague.kotlin.server.type.meta.SEnumClass
 import java.util.*
 
@@ -27,6 +28,8 @@ interface SEnum : SType<SEnum.Value> {
     override fun serialize(generator: JsonGenerator, value: SEnum.Value?) = generator.writeNullOr(value) {
         writeString(it.name)
     }
+
+    override fun serialize(factory: JsonNodeFactory, value: SEnum.Value?): JsonNode = factory.nullNodeOr(value) { factory.textNode(it.name) }
 
     companion object {
         private val nameIndexes = WeakHashMap<SEnum, Map<String, Value>>()

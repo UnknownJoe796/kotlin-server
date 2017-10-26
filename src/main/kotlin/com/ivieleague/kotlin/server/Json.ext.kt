@@ -17,27 +17,28 @@ import org.jetbrains.ktor.util.ValuesMap
 import org.msgpack.jackson.dataformat.MessagePackFactory
 import java.io.InputStream
 
+object JsonGlobals {
 
-val jsonFactory = JsonFactory()
+    val jsonFactory = JsonFactory()
 
-val ContentTypeApplicationBson = ContentType("application", "bson")
-val ContentTypeApplicationMessagePack = ContentType("application", "vnd.msgpack")
+    val ContentTypeApplicationBson = ContentType("application", "bson")
+    val ContentTypeApplicationMessagePack = ContentType("application", "vnd.msgpack")
 
-val JsonObjectMapper = ObjectMapper(jsonFactory)
-        .registerModule(KotlinServerModelsModule)!!
-val BsonObjectMapper = ObjectMapper(BsonFactory())
-        .registerModule(KotlinServerModelsModule)!!
-val MessagePackObjectMapper = ObjectMapper(MessagePackFactory())
-        .registerModule(KotlinServerModelsModule)!!
-
-fun ApplicationCall.respondJsonGenerator(): Unit = TODO()
+    val JsonObjectMapper = ObjectMapper(jsonFactory)
+            .registerModule(KotlinServerModelsModule)!!
+    val BsonObjectMapper = ObjectMapper(BsonFactory())
+            .registerModule(KotlinServerModelsModule)!!
+    val MessagePackObjectMapper = ObjectMapper(MessagePackFactory())
+            .registerModule(KotlinServerModelsModule)!!
+    val jsonNodeFactory = JsonObjectMapper.nodeFactory
+}
 
 suspend fun ApplicationCall.respondJson(result: Any?, statusCode: HttpStatusCode = HttpStatusCode.OK) {
     val contentType = request.accept()?.let { ContentType.parse(it) }
     when (contentType) {
 
-        ContentTypeApplicationMessagePack -> respond(object : FinalContent.ByteArrayContent() {
-            val bytes = MessagePackObjectMapper.writeValueAsBytes(result)
+        JsonGlobals.ContentTypeApplicationMessagePack -> respond(object : FinalContent.ByteArrayContent() {
+            val bytes = JsonGlobals.MessagePackObjectMapper.writeValueAsBytes(result)
             override fun bytes(): ByteArray = bytes
             override val headers: ValuesMap by lazy {
                 ValuesMap.build(true) {
@@ -49,8 +50,8 @@ suspend fun ApplicationCall.respondJson(result: Any?, statusCode: HttpStatusCode
                 get() = statusCode
         })
 
-        ContentTypeApplicationBson -> respond(object : FinalContent.ByteArrayContent() {
-            val bytes = BsonObjectMapper.writeValueAsBytes(result)
+        JsonGlobals.ContentTypeApplicationBson -> respond(object : FinalContent.ByteArrayContent() {
+            val bytes = JsonGlobals.BsonObjectMapper.writeValueAsBytes(result)
             override fun bytes(): ByteArray = bytes
             override val headers: ValuesMap by lazy {
                 ValuesMap.build(true) {
@@ -66,7 +67,7 @@ suspend fun ApplicationCall.respondJson(result: Any?, statusCode: HttpStatusCode
         null,
         ContentType.Application.Any,
         ContentType.Any -> respond(object : FinalContent.ByteArrayContent() {
-            val bytes = JsonObjectMapper.writeValueAsString(result).toByteArray()
+            val bytes = JsonGlobals.JsonObjectMapper.writeValueAsString(result).toByteArray()
             override fun bytes(): ByteArray = bytes
             override val headers: ValuesMap by lazy {
                 ValuesMap.build(true) {
@@ -84,10 +85,10 @@ inline suspend fun <reified T> ApplicationRequest.receiveJson(): T? {
     val contentType = this.contentType()
     try {
         return when (contentType) {
-            ContentTypeApplicationMessagePack -> MessagePackObjectMapper.readValue(receive<InputStream>(), T::class.java)
-            ContentTypeApplicationBson -> BsonObjectMapper.readValue(receive<InputStream>(), T::class.java)
-            ContentType.Application.Json -> JsonObjectMapper.readValue(receive<String>(), T::class.java)
-            ContentType.Any -> JsonObjectMapper.readValue(receive<String>(), T::class.java)
+            JsonGlobals.ContentTypeApplicationMessagePack -> JsonGlobals.MessagePackObjectMapper.readValue(receive<InputStream>(), T::class.java)
+            JsonGlobals.ContentTypeApplicationBson -> JsonGlobals.BsonObjectMapper.readValue(receive<InputStream>(), T::class.java)
+            ContentType.Application.Json -> JsonGlobals.JsonObjectMapper.readValue(receive<String>(), T::class.java)
+            ContentType.Any -> JsonGlobals.JsonObjectMapper.readValue(receive<String>(), T::class.java)
             else -> throw exceptionBadRequest("Cannot read format $contentType")
         }
     } catch (e: Exception) {

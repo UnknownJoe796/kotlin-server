@@ -1,9 +1,11 @@
 package com.ivieleague.kotlin.server.rpc
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.ivieleague.kotlin.server.JsonGlobals
 import com.ivieleague.kotlin.server.exceptionWrap
 import com.ivieleague.kotlin.server.receiveJson
 import com.ivieleague.kotlin.server.respondJson
+import com.ivieleague.kotlin.server.type.SType
 import com.ivieleague.kotlin.server.type.SimpleTypedObject
 import org.jetbrains.ktor.application.ApplicationCall
 import org.jetbrains.ktor.http.HttpStatusCode
@@ -56,9 +58,10 @@ private fun deserializeRPCRequestAndExecute(user: SimpleTypedObject?, tree: Json
     }
 
     return try {
+        val result = method.invoke(user, parameters)
         RPCResponse(
                 id,
-                result = method.invoke(user, parameters)
+                result = (method.returns.type as SType<Any>).serialize(JsonGlobals.jsonNodeFactory, result)
         )
     } catch (e: RPCException) {
         RPCResponse(
