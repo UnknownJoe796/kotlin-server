@@ -3,7 +3,7 @@ package com.ivieleague.kotlin.server.type.meta
 import com.ivieleague.kotlin.server.type.SClass
 import com.ivieleague.kotlin.server.type.SEnum
 import com.ivieleague.kotlin.server.type.SString
-import com.ivieleague.kotlin.server.type.TypedObject
+import com.ivieleague.kotlin.server.type.SimpleTypedObject
 
 object SEnumValueClass : SClass {
     override val name: String = "Field"
@@ -27,7 +27,7 @@ object SEnumValueClass : SClass {
             fieldDescription
     ).associate { it.key to it }
 
-    fun make(field: SEnum.Value) = TypedObject(this).apply {
+    fun make(field: SEnum.Value) = SimpleTypedObject(this).apply {
         this[fieldName] = field.name
         this[fieldDescription] = field.description
     }

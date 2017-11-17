@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
 object SUntypedMap : SType<Map<String, Any?>> {
@@ -45,6 +46,20 @@ object SUntypedMap : SType<Map<String, Any?>> {
             }
         }
         writeEndObject()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun serialize(factory: JsonNodeFactory, value: Map<String, Any?>?): JsonNode = factory.nullNodeOr(value) {
+        objectNode().apply {
+            for ((key, item) in it.entries) {
+                if (item == null)
+                    set(key, nullNode())
+                else {
+                    val type = SPrimitives.getDefault(it.javaClass) as SType<Any>
+                    set(key, type.serialize(factory, item))
+                }
+            }
+        }
     }
 
     override val name: String = "Map"

@@ -2,7 +2,7 @@ package com.ivieleague.kotlin.server.type.meta
 
 import com.ivieleague.kotlin.server.type.SClass
 import com.ivieleague.kotlin.server.type.SType
-import com.ivieleague.kotlin.server.type.TypedObject
+import com.ivieleague.kotlin.server.type.SimpleTypedObject
 
 object SPrimitiveClass : SClass {
     override val name: String = "PrimitiveType"
@@ -13,7 +13,7 @@ object SPrimitiveClass : SClass {
             STypeInterface.fieldDescription
     ).associate { it.key to it }
 
-    fun make(type: SType<*>) = TypedObject(this).apply {
+    fun make(type: SType<*>) = SimpleTypedObject(this).apply {
         this[STypeInterface.fieldName] = type.name
         this[STypeInterface.fieldDescription] = type.description
     }

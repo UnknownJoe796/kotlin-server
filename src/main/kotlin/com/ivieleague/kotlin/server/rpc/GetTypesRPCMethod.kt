@@ -2,7 +2,7 @@ package com.ivieleague.kotlin.server.rpc
 
 import com.ivieleague.kotlin.server.type.SMap
 import com.ivieleague.kotlin.server.type.SType
-import com.ivieleague.kotlin.server.type.TypedObject
+import com.ivieleague.kotlin.server.type.SimpleTypedObject
 import com.ivieleague.kotlin.server.type.meta.STypeInterface
 
 class GetTypesRPCMethod(typesGetter: () -> Map<String, SType<*>>) : RPCMethod {
@@ -19,7 +19,7 @@ class GetTypesRPCMethod(typesGetter: () -> Map<String, SType<*>>) : RPCMethod {
     )
     override val potentialExceptions: Map<Int, RPCMethod.PotentialException<*>> = mapOf()
 
-    override fun invoke(user: TypedObject?, arguments: Map<String, Any?>): Any? = typeData
+    override fun invoke(user: SimpleTypedObject?, arguments: Map<String, Any?>): Any? = typeData
 
     constructor(methods: Map<String, RPCMethod>) : this({
         getTypesRecursively(methods.values).associate { it.name to it }

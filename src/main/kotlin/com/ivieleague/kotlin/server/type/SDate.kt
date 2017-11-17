@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 import java.time.ZonedDateTime
 
@@ -15,6 +16,8 @@ object SDate : SType<ZonedDateTime> {
     override fun serialize(generator: JsonGenerator, value: ZonedDateTime?) = generator.writeNullOr(value) {
         writeString(format.format(it))
     }
+
+    override fun serialize(factory: JsonNodeFactory, value: ZonedDateTime?): JsonNode = factory.nullNodeOr(value) { factory.textNode(format.format(it)) }
 
     override val name: String = "Date"
     override val description: String = "A date/time/timezone value."

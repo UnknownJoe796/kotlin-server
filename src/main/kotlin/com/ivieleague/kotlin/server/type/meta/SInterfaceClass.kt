@@ -26,7 +26,7 @@ object SInterfaceClass : SClass {
             fieldImplementers
     ).associate { it.key to it }
 
-    fun make(type: SInterface) = TypedObject(this).apply {
+    fun make(type: SInterface) = SimpleTypedObject(this).apply {
         this[STypeInterface.fieldName] = type.name
         this[STypeInterface.fieldDescription] = type.description
         this[fieldFields] = type.fields.mapValues { SField.make(it.value) }

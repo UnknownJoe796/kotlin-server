@@ -2,7 +2,10 @@ package com.ivieleague.kotlin.server.type
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.ivieleague.kotlin.server.type.meta.SInterfaceClass
+import com.lightningkite.kotlin.cast
 
 interface SInterface : SType<TypedObject> {
     override val name: String
@@ -25,18 +28,24 @@ interface SInterface : SType<TypedObject> {
         writeFieldName("@type")
         writeString(it.type.name)
 
-        for ((key, item) in it.entries) {
+        for ((key, field) in it.type.fields) {
             writeFieldName(key)
 
-            val field = fields[key]
+            val item: Any? = it[field]
             if (item == null)
                 writeNull()
             else {
-                val type = (field?.type ?: SPrimitives.getDefault(it.javaClass)) as SType<Any>
-                type.serialize(generator, item)
+                (field.type as SType<Any>).serialize(generator, item)
             }
         }
         writeEndObject()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun serialize(factory: JsonNodeFactory, value: TypedObject?) = factory.nullNodeOr(value) {
+        it.type.serialize(factory, it).cast<ObjectNode>().apply {
+            set("@type", factory.textNode(it.type.name))
+        }
     }
 
     override val dependencies: Collection<SType<*>>

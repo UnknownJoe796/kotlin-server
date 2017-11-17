@@ -36,3 +36,13 @@ fun Transaction.getXodus(store: PersistentEntityStore): StoreTransaction {
         txn
     }
 }
+
+//fun StoreTransaction.getTypedObject(type:SClass, id: String) = getEntityOrNull(id)?.let{
+//    val result = SimpleTypedObject(type)
+//    for(field in type.fields.values){
+//        when(field.type){
+//            is SClass -> result[field.key] = it.getLink()
+//            else -> result[field.key] = it.getProperty(field.key)
+//        }
+//    }
+//}

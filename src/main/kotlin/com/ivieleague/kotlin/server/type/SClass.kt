@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.ivieleague.kotlin.server.JsonGlobals
 import com.ivieleague.kotlin.server.type.meta.SClassClass
 
 interface SClass : SType<TypedObject> {
@@ -16,9 +19,11 @@ interface SClass : SType<TypedObject> {
         get() = fields.map { it.value.type }
 
     override val kclass get() = Map::class
-    override fun parse(node: JsonNode): TypedObject? {
+
+    override fun parse(node: JsonNode): TypedObject? = parseDirect(JsonGlobals.jsonNodeFactory, node)
+    fun parseSimple(node: JsonNode): SimpleTypedObject? {
         if (node.isNull) return null
-        val result = TypedObject(this)
+        val result = SimpleTypedObject(this)
         for ((key, value) in node.fields()) {
             val field = fields[key]
             if (field == null) {
@@ -30,12 +35,17 @@ interface SClass : SType<TypedObject> {
         return result
     }
 
+    fun parseDirect(factory: JsonNodeFactory, node: JsonNode): JsonTypedObject? {
+        return if (node.isNull) null
+        else JsonTypedObject(this, factory, node as ObjectNode)
+    }
+
     override fun parse(parser: JsonParser): TypedObject? {
         if (parser.currentToken == JsonToken.VALUE_NULL) return null
 
         assert(parser.currentToken == JsonToken.START_OBJECT)
 
-        val result = TypedObject(this)
+        val result = SimpleTypedObject(this)
         var token = parser.nextValue()
         while (token != JsonToken.END_OBJECT) {
             val key = parser.currentName
@@ -53,18 +63,34 @@ interface SClass : SType<TypedObject> {
     @Suppress("UNCHECKED_CAST")
     override fun serialize(generator: JsonGenerator, value: TypedObject?) = generator.writeNullOr(value) {
         writeStartObject()
-        for ((key, item) in it.entries) {
+        for ((key, field) in fields) {
             writeFieldName(key)
 
-            val field = fields[key]
+            val item: Any? = it[field]
             if (item == null)
                 writeNull()
             else {
-                val type = (field?.type ?: SPrimitives.getDefault(it.javaClass)) as SType<Any>
-                type.serialize(generator, item)
+                (field.type as SType<Any>).serialize(generator, item)
             }
         }
         writeEndObject()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun serialize(factory: JsonNodeFactory, value: TypedObject?): JsonNode {
+        return if (value is JsonTypedObject) value.source
+        else factory.nullNodeOr(value) {
+            objectNode().apply {
+                for ((key, field) in fields) {
+                    val item = it[field]
+                    if (item == null)
+                        set(key, nullNode())
+                    else {
+                        set(key, (field.type as SType<Any>).serialize(factory, item))
+                    }
+                }
+            }
+        }
     }
 
     data class Field<T : Any>(
