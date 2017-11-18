@@ -24,7 +24,8 @@ class SMap<T : Any> private constructor(val ofType: SType<T>) : SType<Map<String
         return result
     }
 
-    override fun parse(node: JsonNode): Map<String, T?>? {
+    override fun parse(node: JsonNode?): Map<String, T?>? {
+        if (node == null) return null
         if (node.isNull) return null
 
         val result = HashMap<String, T?>()

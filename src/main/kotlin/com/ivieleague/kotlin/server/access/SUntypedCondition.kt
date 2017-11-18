@@ -6,25 +6,25 @@ object SUntypedCondition : SInterface {
 
     override val name: String = "UntypedCondition"
     override val description: String = "A condition that that is untyped."
-    override val fields: Map<String, SClass.Field<*>> = mapOf()
+    override val fields: Map<String, TypeField<*>> = mapOf()
 
     val always = object : SClass {
         override val name: String = "UntypedCondition.Always"
         override val description: String = "Always."
-        override val fields: Map<String, SClass.Field<*>> = mapOf()
+        override val fields: Map<String, TypeField<*>> = mapOf()
     }
 
     val never = object : SClass {
         override val name: String = "UntypedCondition.Never"
         override val description: String = "Never."
-        override val fields: Map<String, SClass.Field<*>> = mapOf()
+        override val fields: Map<String, TypeField<*>> = mapOf()
     }
 
     val any = object : SClass {
         override val name: String = "UntypedCondition.Any"
         override val description: String = "Any of the contained conditions."
-        override val fields: Map<String, SClass.Field<*>> = listOf(
-                SClass.Field(
+        override val fields: Map<String, TypeField<*>> = listOf(
+                TypeField(
                         key = "conditions",
                         description = "The list of conditions to check.",
                         type = SList[SUntypedCondition],
@@ -36,8 +36,8 @@ object SUntypedCondition : SInterface {
     val all = object : SClass {
         override val name: String = "UntypedCondition.All"
         override val description: String = "All of the contained conditions."
-        override val fields: Map<String, SClass.Field<*>> = listOf(
-                SClass.Field(
+        override val fields: Map<String, TypeField<*>> = listOf(
+                TypeField(
                         key = "conditions",
                         description = "The list of conditions to check.",
                         type = SList[SUntypedCondition],
@@ -49,8 +49,8 @@ object SUntypedCondition : SInterface {
     val equal = object : SClass {
         override val name: String = "UntypedCondition.Equal"
         override val description: String = "A condition checking if all of the properties listed in [value] are equal to the properties in the object."
-        override val fields: Map<String, SClass.Field<*>> = listOf(
-                SClass.Field(
+        override val fields: Map<String, TypeField<*>> = listOf(
+                TypeField(
                         key = "value",
                         description = "The list of conditions to check.",
                         type = SUntypedMap,
@@ -62,8 +62,8 @@ object SUntypedCondition : SInterface {
     val notEqual = object : SClass {
         override val name: String = "UntypedCondition.NotEqual"
         override val description: String = "A condition checking if all of the properties listed in [value] are not equal to the properties in the object."
-        override val fields: Map<String, SClass.Field<*>> = listOf(
-                SClass.Field(
+        override val fields: Map<String, TypeField<*>> = listOf(
+                TypeField(
                         key = "value",
                         description = "The list of conditions to check.",
                         type = SUntypedMap,
@@ -75,8 +75,8 @@ object SUntypedCondition : SInterface {
     val greaterThanOrEqualTo = object : SClass {
         override val name: String = "UntypedCondition.GreaterThanOrEqualTo"
         override val description: String = "A condition checking if all of the properties listed in [value] are greater than or equal to the properties in the object."
-        override val fields: Map<String, SClass.Field<*>> = listOf(
-                SClass.Field(
+        override val fields: Map<String, TypeField<*>> = listOf(
+                TypeField(
                         key = "value",
                         description = "The list of conditions to check.",
                         type = SUntypedMap,
@@ -88,8 +88,8 @@ object SUntypedCondition : SInterface {
     val lessThanOrEqualTo = object : SClass {
         override val name: String = "UntypedCondition.LessThanOrEqualTo"
         override val description: String = "A condition checking if all of the properties listed in [value] are less than or equal to the properties in the object."
-        override val fields: Map<String, SClass.Field<*>> = listOf(
-                SClass.Field(
+        override val fields: Map<String, TypeField<*>> = listOf(
+                TypeField(
                         key = "value",
                         description = "The list of conditions to check.",
                         type = SUntypedMap,
@@ -101,8 +101,8 @@ object SUntypedCondition : SInterface {
     val greaterThan = object : SClass {
         override val name: String = "UntypedCondition.GreaterThan"
         override val description: String = "A condition checking if all of the properties listed in [value] are greater than the properties in the object."
-        override val fields: Map<String, SClass.Field<*>> = listOf(
-                SClass.Field(
+        override val fields: Map<String, TypeField<*>> = listOf(
+                TypeField(
                         key = "value",
                         description = "The list of conditions to check.",
                         type = SUntypedMap,
@@ -114,8 +114,8 @@ object SUntypedCondition : SInterface {
     val lessThan = object : SClass {
         override val name: String = "UntypedCondition.LessThan"
         override val description: String = "A condition checking if all of the properties listed in [value] are less than the properties in the object."
-        override val fields: Map<String, SClass.Field<*>> = listOf(
-                SClass.Field(
+        override val fields: Map<String, TypeField<*>> = listOf(
+                TypeField(
                         key = "value",
                         description = "The list of conditions to check.",
                         type = SUntypedMap,

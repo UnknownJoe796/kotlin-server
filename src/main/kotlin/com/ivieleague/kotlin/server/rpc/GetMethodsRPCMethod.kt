@@ -1,7 +1,7 @@
 package com.ivieleague.kotlin.server.rpc
 
 import com.ivieleague.kotlin.server.type.SMap
-import com.ivieleague.kotlin.server.type.SimpleTypedObject
+import com.ivieleague.kotlin.server.type.TypedObject
 
 class GetMethodsRPCMethod(methods: Map<String, RPCMethod>) : RPCMethod {
 
@@ -19,7 +19,7 @@ class GetMethodsRPCMethod(methods: Map<String, RPCMethod>) : RPCMethod {
     )
     override val potentialExceptions: Map<Int, RPCMethod.PotentialException<*>> = mapOf()
 
-    override fun invoke(user: SimpleTypedObject?, arguments: Map<String, Any?>): Any? {
+    override fun invoke(user: TypedObject?, arguments: Map<String, Any?>): Any? {
         return methodData
     }
 

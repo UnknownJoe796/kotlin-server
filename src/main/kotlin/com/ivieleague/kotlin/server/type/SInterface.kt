@@ -7,14 +7,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.ivieleague.kotlin.server.type.meta.SInterfaceClass
 import com.lightningkite.kotlin.cast
 
-interface SInterface : SType<TypedObject> {
+interface SInterface : SHasFields<TypedObject> {
     override val name: String
     override val description: String
-    val fields: Map<String, SClass.Field<*>>
     val implementers: Map<String, SClass>
 
     override val kclass get() = Map::class
-    override fun parse(node: JsonNode): TypedObject? {
+    override fun parse(node: JsonNode?): TypedObject? {
+        if (node == null) return null
         if (node.isNull) return null
         val typeString = node.get("@type").asText()
         val sclass = implementers[typeString] ?: throw IllegalArgumentException("Type $typeString not found as an implementer of $name")

@@ -2,7 +2,7 @@ package com.ivieleague.kotlin.server.access
 
 import com.ivieleague.kotlin.server.rpc.RPCMethod
 import com.ivieleague.kotlin.server.type.SList
-import com.ivieleague.kotlin.server.type.SimpleTypedObject
+import com.ivieleague.kotlin.server.type.TypedObject
 
 class RPCQuery(val dao: DAO) : RPCMethod {
     override val description: String = "Queries for ${dao.type}."
@@ -21,9 +21,9 @@ class RPCQuery(val dao: DAO) : RPCMethod {
             DAOPotentialExceptions.notAllowedRead(dao.type)
     ).associate { it.code to it }
 
-    override fun invoke(user: SimpleTypedObject?, arguments: Map<String, Any?>): List<SimpleTypedObject>
+    override fun invoke(user: TypedObject?, arguments: Map<String, Any?>): List<TypedObject>
             = Transaction(user, readOnly = true).use {
-        dao.query(it, arguments["read"] as SimpleTypedObject)
+        dao.query(it, arguments["read"] as TypedObject)
     }
 
 }

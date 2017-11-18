@@ -9,7 +9,8 @@ import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
 object SUntypedMap : SType<Map<String, Any?>> {
     override val kclass = Map::class
-    override fun parse(node: JsonNode): Map<String, Any?>? {
+    override fun parse(node: JsonNode?): Map<String, Any?>? {
+        if (node == null) return null
         if (node.isNull) return null
 
         val result = HashMap<String, Any?>()

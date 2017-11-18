@@ -9,7 +9,7 @@ import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 object SVoid : SType<Unit> {
     override val kclass = Unit::class
     override fun parse(parser: JsonParser): Unit? = Unit
-    override fun parse(node: JsonNode) = Unit
+    override fun parse(node: JsonNode?) = Unit
     override fun serialize(generator: JsonGenerator, value: Unit?) = generator.writeNull()
     override fun serialize(factory: JsonNodeFactory, value: Unit?): JsonNode = factory.nullNode()
     override val name: String = "Void"

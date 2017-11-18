@@ -9,28 +9,23 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.ivieleague.kotlin.server.JsonGlobals
 import com.ivieleague.kotlin.server.type.meta.SClassClass
 
-interface SClass : SType<TypedObject> {
+interface SClass : SHasFields<TypedObject> {
     override val name: String
     override val description: String
-    val fields: Map<String, Field<*>>
-    val primaryKey: List<Field<*>> get() = listOf()
+    val primaryKey: List<TypeField<*>> get() = listOf()
 
     override val dependencies: Collection<SType<*>>
         get() = fields.map { it.value.type }
 
     override val kclass get() = Map::class
 
-    override fun parse(node: JsonNode): TypedObject? = parseDirect(JsonGlobals.jsonNodeFactory, node)
+    override fun parse(node: JsonNode?): TypedObject? = if (node == null) null else parseDirect(JsonGlobals.jsonNodeFactory, node)
     fun parseSimple(node: JsonNode): SimpleTypedObject? {
         if (node.isNull) return null
         val result = SimpleTypedObject(this)
-        for ((key, value) in node.fields()) {
-            val field = fields[key]
-            if (field == null) {
-                result[key] = SPrimitives.getDefault(value).parse(value)
-            } else {
-                result[key] = field.type.parse(value)
-            }
+        for ((key, field) in fields) {
+            val value: JsonNode? = node.get(key)
+            result[key] = field.type.parse(value)
         }
         return result
     }
@@ -93,12 +88,6 @@ interface SClass : SType<TypedObject> {
         }
     }
 
-    data class Field<T : Any>(
-            val key: String,
-            val description: String,
-            val type: SType<T>,
-            val default: T? = null
-    )
 
     override fun reflect(): TypedObject = SClassClass.make(this)
 }

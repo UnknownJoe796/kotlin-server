@@ -12,7 +12,7 @@ object SDate : SType<ZonedDateTime> {
     val format = java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME
     override val kclass = ZonedDateTime::class
     override fun parse(parser: JsonParser) = if (parser.currentToken == JsonToken.VALUE_NULL) null else format.parse(parser.text, ZonedDateTime::from)
-    override fun parse(node: JsonNode) = if (node.isNull) null else format.parse(node.asText(), ZonedDateTime::from)
+    override fun parse(node: JsonNode?) = if (node == null) null else if (node.isNull) null else format.parse(node.asText(), ZonedDateTime::from)
     override fun serialize(generator: JsonGenerator, value: ZonedDateTime?) = generator.writeNullOr(value) {
         writeString(format.format(it))
     }

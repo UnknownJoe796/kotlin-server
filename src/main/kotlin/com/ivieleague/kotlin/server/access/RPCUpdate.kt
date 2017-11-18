@@ -1,7 +1,7 @@
 package com.ivieleague.kotlin.server.access
 
 import com.ivieleague.kotlin.server.rpc.RPCMethod
-import com.ivieleague.kotlin.server.type.SimpleTypedObject
+import com.ivieleague.kotlin.server.type.TypedObject
 
 class RPCUpdate(val dao: DAO) : RPCMethod {
     override val description: String = "Update for ${dao.type}."
@@ -21,8 +21,8 @@ class RPCUpdate(val dao: DAO) : RPCMethod {
             DAOPotentialExceptions.notAllowedWriteOver(dao.type)
     ).associate { it.code to it }
 
-    override fun invoke(user: SimpleTypedObject?, arguments: Map<String, Any?>): SimpleTypedObject
+    override fun invoke(user: TypedObject?, arguments: Map<String, Any?>): TypedObject
             = Transaction(user, readOnly = false).use {
-        dao.update(it, arguments["write"] as SimpleTypedObject)
+        dao.update(it, arguments["write"] as TypedObject)
     }
 }

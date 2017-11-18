@@ -1,7 +1,7 @@
 package com.ivieleague.kotlin.server.rpc
 
 import com.ivieleague.kotlin.server.type.SType
-import com.ivieleague.kotlin.server.type.SimpleTypedObject
+import com.ivieleague.kotlin.server.type.TypedObject
 
 
 interface RPCMethod {
@@ -36,6 +36,5 @@ interface RPCMethod {
     }
 
     @Throws(RPCException::class)
-    operator fun invoke(user: SimpleTypedObject?, arguments: Map<String, Any?>): Any?
+    operator fun invoke(user: TypedObject?, arguments: Map<String, Any?>): Any?
 }
-

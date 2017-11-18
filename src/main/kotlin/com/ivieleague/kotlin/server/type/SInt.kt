@@ -9,7 +9,7 @@ import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
 object SInt : SType<Int> {
     override val kclass = Int::class
-    override fun parse(node: JsonNode) = if (node.isNull) null else node.asInt()
+    override fun parse(node: JsonNode?) = if (node == null) null else if (node.isNull) null else node.asInt()
     override fun parse(parser: JsonParser) = if (parser.currentToken == JsonToken.VALUE_NULL) null else parser.intValue
     override fun serialize(generator: JsonGenerator, value: Int?) = generator.writeNullOr(value) { writeNumber(it) }
     override fun serialize(factory: JsonNodeFactory, value: Int?): JsonNode = factory.nullNodeOr(value) { factory.numberNode(it) }

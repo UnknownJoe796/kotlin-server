@@ -1,10 +1,11 @@
 package com.ivieleague.kotlin.server.access
 
 import com.ivieleague.kotlin.server.type.SClass
-import com.ivieleague.kotlin.server.type.SimpleTypedObject
+import com.ivieleague.kotlin.server.type.TypedObject
 
 interface DAO {
     val type: SClass
-    fun query(transaction: Transaction, read: SimpleTypedObject): List<SimpleTypedObject>
-    fun update(transaction: Transaction, write: SimpleTypedObject): SimpleTypedObject
+    fun get(transaction: Transaction, id: String, read: TypedObject): TypedObject?
+    fun query(transaction: Transaction, read: TypedObject): List<TypedObject>
+    fun update(transaction: Transaction, write: TypedObject): TypedObject
 }

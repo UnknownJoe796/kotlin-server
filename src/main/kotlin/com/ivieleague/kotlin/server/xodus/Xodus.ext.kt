@@ -1,6 +1,7 @@
 package com.ivieleague.kotlin.server.xodus
 
 import com.ivieleague.kotlin.server.access.Transaction
+import jetbrains.exodus.entitystore.Entity
 import jetbrains.exodus.entitystore.EntityRemovedInDatabaseException
 import jetbrains.exodus.entitystore.PersistentEntityStore
 import jetbrains.exodus.entitystore.StoreTransaction
@@ -36,6 +37,9 @@ fun Transaction.getXodus(store: PersistentEntityStore): StoreTransaction {
         txn
     }
 }
+
+fun <T> Entity.setPropertyNullable(key: String, value: Comparable<T>?)
+        = if (value == null) deleteProperty(key) else setProperty(key, value)
 
 //fun StoreTransaction.getTypedObject(type:SClass, id: String) = getEntityOrNull(id)?.let{
 //    val result = SimpleTypedObject(type)

@@ -21,7 +21,7 @@ interface SEnum : SType<SEnum.Value> {
     operator fun get(name: String): Value? = getNameIndex(this)[name]
 
     override fun parse(parser: JsonParser) = if (parser.currentToken == JsonToken.VALUE_NULL) null else get(parser.text)
-    override fun parse(node: JsonNode): SEnum.Value? = if (node.isNull) null else get(node.asText())
+    override fun parse(node: JsonNode?): SEnum.Value? = if (node == null) null else if (node.isNull) null else get(node.asText())
 
     override fun reflect(): TypedObject = SEnumClass.make(this)
 

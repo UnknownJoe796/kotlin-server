@@ -1,6 +1,7 @@
 package com.ivieleague.kotlin.server
 
 import com.fasterxml.jackson.core.JsonFactory
+import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.undercouch.bson4jackson.BsonFactory
 import org.jetbrains.ktor.application.ApplicationCall
@@ -16,6 +17,7 @@ import org.jetbrains.ktor.response.contentType
 import org.jetbrains.ktor.util.ValuesMap
 import org.msgpack.jackson.dataformat.MessagePackFactory
 import java.io.InputStream
+import java.io.StringWriter
 
 object JsonGlobals {
 
@@ -31,6 +33,13 @@ object JsonGlobals {
     val MessagePackObjectMapper = ObjectMapper(MessagePackFactory())
             .registerModule(KotlinServerModelsModule)!!
     val jsonNodeFactory = JsonObjectMapper.nodeFactory
+}
+
+inline fun JsonFactory.generateString(action: JsonGenerator.() -> Unit): String {
+    val writer = StringWriter()
+    val generator = createGenerator(writer)
+    action.invoke(generator)
+    return writer.toString()
 }
 
 suspend fun ApplicationCall.respondJson(result: Any?, statusCode: HttpStatusCode = HttpStatusCode.OK) {

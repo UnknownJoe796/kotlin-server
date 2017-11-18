@@ -1,6 +1,6 @@
 package com.ivieleague.kotlin.server.access
 
-import com.ivieleague.kotlin.server.type.SimpleTypedObject
+import com.ivieleague.kotlin.server.type.TypedObject
 import com.lightningkite.kotlin.invokeAll
 
 
@@ -9,7 +9,7 @@ import com.lightningkite.kotlin.invokeAll
  * Created by josep on 7/12/2017.
  */
 class Transaction(
-        val user: SimpleTypedObject? = null,
+        val user: TypedObject? = null,
         val readOnly: Boolean = false,
         val required: Boolean = false
 ) {

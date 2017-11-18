@@ -9,7 +9,8 @@ import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
 object SUntypedList : SType<List<Any?>> {
     override val kclass = List::class
-    override fun parse(node: JsonNode): List<Any?>? {
+    override fun parse(node: JsonNode?): List<Any?>? {
+        if (node == null) return null
         if (node.isNull) return null
 
         val result = ArrayList<Any?>()

@@ -8,44 +8,44 @@ class SRead private constructor(val type: SClass) : SClass {
     override val description: String
         get() = "A description of what to read for ${type.name}"
 
-    val fieldCondition = SClass.Field(
+    val fieldCondition = TypeField(
             key = "condition",
             description = "The condition to query for",
             type = SCondition[type],
             default = null
     )
-    val fieldSort = SClass.Field(
+    val fieldSort = TypeField(
             key = "sort",
             description = "The things to sort on",
             type = SList[SSort[type]],
             default = listOf()
     )
-    val fieldField = SClass.Field(
+    val fieldField = TypeField(
             key = "startAfter",
             description = "The object to start after",
             type = type,
             default = null
     )
-    val fieldCount = SClass.Field(
+    val fieldCount = TypeField(
             key = "count",
             description = "The maximum number of instances to return",
             type = SInt,
             default = 100
     )
 
-    override val fields: Map<String, SClass.Field<*>> = run {
-        val it = HashMap<String, SClass.Field<*>>()
+    override val fields: Map<String, TypeField<*>> = run {
+        val it = HashMap<String, TypeField<*>>()
 
         for (field in type.fields.values) {
             val fieldType = field.type
             val newField = when (fieldType) {
-                is SClass -> SClass.Field(
+                is SClass -> TypeField(
                         key = field.key,
                         description = field.description,
                         type = SRead[fieldType],
                         default = null
                 )
-                else -> SClass.Field(
+                else -> TypeField(
                         key = field.key,
                         description = field.description,
                         type = SBoolean,
@@ -74,7 +74,7 @@ class SRead private constructor(val type: SClass) : SClass {
 class SSort private constructor(val type: SClass) : SEnum {
     override val name: String = "${type.name}_Sort"
     override val description: String = "The ways that this can be sorted."
-    val breakApart = HashMap<SEnum.Value, Pair<SClass.Field<*>, Boolean>>()
+    val breakApart = HashMap<SEnum.Value, Pair<TypeField<*>, Boolean>>()
     override val values: Set<SEnum.Value> = run {
         val set = HashSet<SEnum.Value>()
         for ((_, field) in type.fields) {

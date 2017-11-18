@@ -1,22 +1,19 @@
 package com.ivieleague.kotlin.server.type.meta
 
-import com.ivieleague.kotlin.server.type.SClass
-import com.ivieleague.kotlin.server.type.SEnum
-import com.ivieleague.kotlin.server.type.SList
-import com.ivieleague.kotlin.server.type.SimpleTypedObject
+import com.ivieleague.kotlin.server.type.*
 
 object SEnumClass : SClass {
     override val name: String = "Enum"
     override val description: String = "Metadata about an enum."
 
-    val fieldFields = SClass.Field(
+    val fieldFields = TypeField(
             key = "fields",
             description = "A list of the values.",
             type = SList[SEnumValueClass],
             default = listOf()
     )
 
-    override val fields: Map<String, SClass.Field<*>> = listOf<SClass.Field<*>>(
+    override val fields: Map<String, TypeField<*>> = listOf<TypeField<*>>(
             STypeInterface.fieldName,
             STypeInterface.fieldDescription,
             fieldFields

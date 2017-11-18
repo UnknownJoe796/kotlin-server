@@ -15,8 +15,8 @@ interface SType<T : Any> {
     val jclass: Class<*> get() = kclass.java
     fun reflect(): TypedObject
 
-    fun parse(node: JsonNode): T?
+    fun parse(node: JsonNode?): T?
     fun parse(parser: JsonParser): T? = parse(parser.readValueAsTree<JsonNode>())
     fun serialize(generator: JsonGenerator, value: T?)
-    fun serialize(factory: JsonNodeFactory, value: T?): JsonNode
+    fun serialize(factory: JsonNodeFactory, value: T?): JsonNode?
 }

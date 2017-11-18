@@ -24,7 +24,8 @@ class SList<T : Any> private constructor(val ofType: SType<T>) : SType<List<T?>>
         return result
     }
 
-    override fun parse(node: JsonNode): List<T?>? {
+    override fun parse(node: JsonNode?): List<T?>? {
+        if (node == null) return null
         if (node.isNull) return null
 
         val result = ArrayList<T?>()
