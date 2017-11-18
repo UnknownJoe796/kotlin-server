@@ -7,39 +7,41 @@ class SWrite private constructor(val type: SHasFields<TypedObject>) : SClass {
         get() = type.name + "_Write"
     override val description: String
         get() = "A description of what to write for ${type.name}"
-    override val fields: Map<String, TypeField<*>> = run {
-        val it = HashMap<String, TypeField<*>>()
 
-        for (field in type.fields.values) {
-            val fieldType = field.type
-            val newField = when (fieldType) {
-                is SClass -> TypeField(
-                        key = field.key,
-                        description = field.description,
-                        type = SWrite[fieldType],
-                        default = null
-                )
-                else -> TypeField(
+    val partialFields = type.fields.values
+            .filter { it.type !is SHasFields<*> }
+            .associate { field ->
+                field to TypeField(
                         key = field.key,
                         description = field.description,
                         type = SPartial[field.type],
                         default = null
                 )
             }
-            it[newField.key] = newField
-        }
 
-        it["delete"] = TypeField(
+    val subwriteFields = type.fields.values
+            .filter { it.type is SHasFields<*> }
+            .associate { field ->
+                @Suppress("UNCHECKED_CAST")
+                val fieldType = field.type as SHasFields<TypedObject>
+                field to TypeField(
+                        key = field.key,
+                        description = field.description,
+                        type = SPartial[SWrite[fieldType]],
+                        default = null
+                )
+            }
+
+    override val fields: Map<String, TypeField<*>> = partialFields.mapKeys { it.key.key } + (delete.key to delete)
+
+    companion object {
+        val delete = TypeField(
                 key = "delete",
                 description = "Whether or not the object should be deleted",
                 type = SBoolean,
                 default = false
         )
 
-        it
-    }
-
-    companion object {
         private val cache = HashMap<SHasFields<TypedObject>, SWrite>()
         operator fun get(type: SHasFields<TypedObject>) = cache.getOrPut(type) { SWrite(type) }
     }

@@ -4,6 +4,7 @@ import com.ivieleague.kotlin.server.JsonGlobals
 import com.ivieleague.kotlin.server.access.*
 import com.ivieleague.kotlin.server.generateString
 import com.ivieleague.kotlin.server.type.*
+import jetbrains.exodus.entitystore.Entity
 import jetbrains.exodus.entitystore.PersistentEntityStore
 
 class XodusDAO(val schema: Schema, val store: PersistentEntityStore, override val type: SDatabaseClass) : DAO {
@@ -51,17 +52,97 @@ class XodusDAO(val schema: Schema, val store: PersistentEntityStore, override va
         } as? T
     }
 
+    @Suppress("UNCHECKED_CAST")
+    fun Entity.toTypedObject(transaction: Transaction, read: TypedObject): TypedObject {
+        val output = SimpleTypedObject(this@XodusDAO.type)
+        for (field in read.type.fields.values) {
+            val key = field.key
+            val subread = if (field.type is SRead) read[field] as? TypedObject else null
+            val shouldRead = subread != null || read[field] == true
+            if (shouldRead) {
+                val primitiveValue = this.getProperty(key)
+                val actualField = this@XodusDAO.type.fields[key] as TypeField<Any>
+                output[actualField] = when {
+                    actualField == IdField -> this.id.toString()
+                    primitiveValue == null -> null
+                    else -> actualField.fromXodusPrimitive(
+                            transaction = transaction,
+                            read = subread,
+                            item = primitiveValue
+                    )
+                }
+            }
+        }
+        return output
+    }
 
-    override fun get(transaction: Transaction, id: String, read: TypedObject): TypedObject {
+    override fun get(transaction: Transaction, id: String, read: TypedObject): TypedObject? {
         val txn = transaction.getXodus(store)
+        val entity = txn.getEntityOrNull(id) ?: return null
+        return entity.toTypedObject(transaction, read)
     }
 
     override fun query(transaction: Transaction, read: TypedObject): List<TypedObject> {
         val txn = transaction.getXodus(store)
-        txn.getAll(type.name).
+        return txn.getAll(type.name).map {
+            it.toTypedObject(transaction, read)
+        }
     }
 
     override fun update(transaction: Transaction, write: TypedObject): TypedObject {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val txn = transaction.getXodus(store)
+
+        val delete = write[SWrite.delete] ?: false
+        val partialFields = (write.type as SWrite).partialFields
+        val subwriteFields = (write.type as SWrite).subwriteFields.filter { it.key in type.externalFields }
+
+        val partialIdField = partialFields[IdField]!!
+        val id = (write[partialIdField] as? Exists<String>)?.value
+        if (id == null && delete) return SimpleTypedObject(type)
+        val entity = if (id == null) txn.newEntity(type.name) else txn.getEntityOrNull(id) ?: throw IllegalStateException("Item with ID '$id' not found.")
+
+        val result = SimpleTypedObject(type).apply {
+            this[IdField] = entity.id.toString()
+        }
+
+        for ((field, writeField) in subwriteFields) {
+            val subwriteContainer = write[writeField] ?: continue
+            val subwrite = subwriteContainer.value
+            val external = field in type.externalFields
+            if (subwrite == null) {
+                entity.deleteProperty(writeField.key)
+            } else {
+                if (external) {
+                    val resultOfSub = schema.daos[writeField.type.name]!!.update(transaction, subwrite)
+                    val resultId = resultOfSub[IdField]
+                    if (resultId == null) {
+                        entity.deleteProperty(writeField.key)
+                    } else {
+                        entity.setProperty(resultId, )
+                        result[field] =
+                    }
+                }
+            }
+        }
+
+        if (delete) {
+            entity.delete()
+            result[IdField] = null
+            return result
+        }
+
+        for ((field, writeField) in partialFields) {
+            if (field == IdField) continue
+            @Suppress("UNCHECKED_CAST")
+            val untypedField = field as TypeField<Any>
+            val toWriteContainer = write[writeField] as? Exists<Any> ?: continue
+            val valueToWrite = toWriteContainer.value?.let { untypedField.toXodusPrimitive(it) }
+            if (valueToWrite == null)
+                entity.deleteProperty(writeField.key)
+            else
+                entity.setProperty(writeField.key, valueToWrite)
+        }
+
+        return result
     }
 }
