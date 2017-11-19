@@ -1,11 +1,13 @@
 package com.ivieleague.kotlin.server.access
 
-import com.ivieleague.kotlin.server.type.SClass
-import com.ivieleague.kotlin.server.type.TypedObject
+import com.ivieleague.kotlin.server.rpc.Transaction
+import com.ivieleague.kotlin.server.type.SType
 
-interface DAO {
-    val type: SClass
-    fun get(transaction: Transaction, id: String, read: TypedObject): TypedObject?
-    fun query(transaction: Transaction, read: TypedObject): List<TypedObject>
-    fun update(transaction: Transaction, write: TypedObject): TypedObject
+interface DAO<T> {
+    val type: SType<T>
+    fun get(transaction: Transaction, pointer: String): T?
+    fun create(transaction: Transaction, value: T): String
+    fun set(transaction: Transaction, pointer: String, value: T)
+    fun delete(transaction: Transaction, pointer: String)
 }
+

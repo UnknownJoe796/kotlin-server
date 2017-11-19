@@ -1,4 +1,4 @@
-package com.ivieleague.kotlin.server.access
+package com.ivieleague.kotlin.server.rpc
 
 import com.ivieleague.kotlin.server.type.TypedObject
 import com.lightningkite.kotlin.invokeAll

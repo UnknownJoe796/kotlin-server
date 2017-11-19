@@ -7,15 +7,14 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
-class SMap<T : Any> private constructor(val ofType: SType<T>) : SType<Map<String, T?>> {
+class SMap<T> private constructor(val ofType: SType<T>) : SType<Map<String, T>> {
     override val kclass = Map::class
 
-    override fun parse(parser: JsonParser): Map<String, T?>? {
-        if (parser.currentToken == JsonToken.VALUE_NULL) return null
+    override fun parse(parser: JsonParser): Map<String, T> {
 
         assert(parser.currentToken == JsonToken.START_OBJECT)
 
-        val result = HashMap<String, T?>()
+        val result = HashMap<String, T>()
         var token = parser.nextValue()
         while (token != JsonToken.END_OBJECT) {
             result[parser.currentName] = ofType.parse(parser)
@@ -24,39 +23,30 @@ class SMap<T : Any> private constructor(val ofType: SType<T>) : SType<Map<String
         return result
     }
 
-    override fun parse(node: JsonNode?): Map<String, T?>? {
-        if (node == null) return null
-        if (node.isNull) return null
+    override fun parse(node: JsonNode?): Map<String, T> {
+        if (node == null) throw IllegalArgumentException()
 
-        val result = HashMap<String, T?>()
+        val result = HashMap<String, T>()
         for ((key, value) in node.fields()) {
             result[key] = ofType.parse(value)
         }
         return result
     }
 
-    override fun serialize(generator: JsonGenerator, value: Map<String, T?>?) = generator.writeNullOr(value) {
+    override fun serialize(generator: JsonGenerator, value: Map<String, T>) = generator.writeNullOr(value) {
         writeStartObject()
         for ((key, item) in it) {
             writeFieldName(key)
-            if (item == null)
-                writeNull()
-            else {
-                ofType.serialize(generator, item)
-            }
+            ofType.serialize(generator, item)
         }
         writeEndObject()
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun serialize(factory: JsonNodeFactory, value: Map<String, T?>?): JsonNode = factory.nullNodeOr(value) {
+    override fun serialize(factory: JsonNodeFactory, value: Map<String, T>): JsonNode = factory.nullNodeOr(value) {
         objectNode().apply {
             for ((key, item) in it.entries) {
-                if (item == null)
-                    set(key, nullNode())
-                else {
-                    set(key, ofType.serialize(factory, item as? T))
-                }
+                set(key, ofType.serialize(factory, item))
             }
         }
     }
@@ -72,6 +62,6 @@ class SMap<T : Any> private constructor(val ofType: SType<T>) : SType<Map<String
 
     companion object {
         private val cache = HashMap<SType<*>, SMap<*>>()
-        operator fun <T : Any> get(type: SType<T>) = cache.getOrPut(type) { SMap(type) } as SMap<T>
+        operator fun <T> get(type: SType<T>) = cache.getOrPut(type) { SMap(type) } as SMap<T>
     }
 }

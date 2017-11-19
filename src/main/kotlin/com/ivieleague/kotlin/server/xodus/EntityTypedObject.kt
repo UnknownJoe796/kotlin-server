@@ -25,9 +25,10 @@ fun StoreTransaction.newTypedObject(item: TypedObject) = EntityTypedObject(
         transaction = this,
         entity = this.newEntity(item.type.name)
 ).apply {
+    val idField = IdField[item.type]
     for (field in item.type.fields.values) {
-        if (field == IdField) continue
-        val untypedField = field as TypeField<Any>
+        if (idField == field) continue
+        val untypedField = field as TypeField<Any?>
         this[untypedField] = item[untypedField]
     }
 }
@@ -57,58 +58,25 @@ class EntityTypedObject(
         val transaction: StoreTransaction,
         val entity: Entity
 ) : MutableTypedObject {
+    val idField = IdField[type]
+
+
 
     @Suppress("IMPLICIT_CAST_TO_ANY", "UNCHECKED_CAST")
-    override fun <T : Any> get(field: TypeField<T>): T? {
-        if (field == IdField) return entity.id.toString() as T
+    override fun <T> get(field: TypeField<T>): T? {
+        if (field == idField)
+            return entity.id.toString() as T
         val type = field.type
         return when (type) {
-            SBoolean, SDouble, SFloat, SInt, SLong, SString -> entity.getProperty(field.key)
+            SBoolean, SDouble, SFloat, SInt, SLong, SString, is SPointer<*> -> entity.getProperty(field.key)
             SVoid -> Unit
-
-            is SClass -> if (field.embedded) {
-                try {
-                    (entity.getProperty(field.key) as? String)?.let { type.parse(JsonGlobals.JsonObjectMapper.readTree(it)) }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    null
-                }
-            } else {
-                entity.
-            }
             SDate -> (entity.getProperty(field.key) as? String)?.let { SDate.format.parse(it) }
             is SEnum -> (entity.getProperty(field.key) as? String)?.let { type.get(it) }
-            is SInterface -> if (field.embedded) {
-                deferReadToJson(field, type)
-            } else {
-                val actualTypeString = entity.getProperty(field.key + "__type") as? String
-                if (actualTypeString == null) null
-                else {
-                    entity.getLink(field.key)?.let {
-                        EntityTypedObject(
-                                type.implementers[actualTypeString] ?: throw IllegalArgumentException("No implementer '$actualTypeString' found."),
-                                transaction,
-                                it
-                        )
-                    }
-                }
-            }
-            is SList<*> -> {
-                if (field.embedded) {
-                    deferReadToJson(field, type)
-                } else {
-                    TODO()
-                }
-            }
-            is SMap<*> -> TODO()
-            is SUntypedList -> TODO()
-            is SUntypedMap -> TODO()
-
-            else -> throw IllegalArgumentException()
+            else -> deferReadToJson(field, type)
         } as? T
     }
 
-    private fun <T : Any> deferReadToJson(field: TypeField<T>, type: SType<T>): T? {
+    private fun <T> deferReadToJson(field: TypeField<T>, type: SType<T>): T? {
         return try {
             (entity.getProperty(field.key) as? String)?.let { type.parse(JsonGlobals.JsonObjectMapper.readTree(it)) }
         } catch (e: Exception) {
@@ -118,40 +86,18 @@ class EntityTypedObject(
     }
 
     @Suppress("IMPLICIT_CAST_TO_ANY", "UNCHECKED_CAST")
-    override fun <T : Any> set(field: TypeField<T>, value: T?) {
+    override operator fun <T> set(field: TypeField<T>, value: T) {
         val type = field.type
         when (type) {
-            SBoolean, SDouble, SFloat, SInt, SLong, SString -> entity.setPropertyNullable(field.key, value as? Comparable<Nothing>)
+            SBoolean, SDouble, SFloat, SInt, SLong, SString, is SPointer<*> -> entity.setPropertyNullable(field.key, value as? Comparable<Nothing>)
             SVoid -> Unit
-
-            is SClass -> if (field.embedded) {
-                deferWriteToJson<T>(field, value, type)
-            } else {
-                TODO()
-            }
             SDate -> entity.setPropertyNullable(field.key, value?.let { SDate.format.format(it as ZonedDateTime) })
             is SEnum -> entity.setPropertyNullable(field.key, (value as? SEnum.Value)?.name)
-            is SInterface -> if (field.embedded) {
-                deferWriteToJson(field, value, type)
-            } else {
-                TODO()
-            }
-            is SList<*> -> {
-                if (field.embedded) {
-                    deferWriteToJson<T>(field, value, type)
-                } else {
-                    TODO()
-                }
-            }
-            is SMap<*> -> TODO()
-            is SUntypedList -> TODO()
-            is SUntypedMap -> TODO()
-
-            else -> throw IllegalArgumentException()
+            else -> deferWriteToJson(field, value, type)
         } as? T
     }
 
-    private fun <T : Any> deferWriteToJson(field: TypeField<T>, value: T?, type: SType<T>): Boolean? {
+    private fun <T> deferWriteToJson(field: TypeField<T>, value: T, type: SType<T>): Boolean? {
         return try {
             entity.setPropertyNullable(
                     field.key,

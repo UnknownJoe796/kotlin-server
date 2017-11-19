@@ -75,7 +75,7 @@ object SRPCMethod : SClass {
                 argType
         ).associate { it.key to it }
 
-        fun make(item: RPCMethod.Argument): SimpleTypedObject = SimpleTypedObject(Argument).apply {
+        fun make(item: RPCMethod.Argument<*>): SimpleTypedObject = SimpleTypedObject(Argument).apply {
             this[argKey] = item.key
             this[argDescription] = item.description
             this[argType] = item.type.name
@@ -104,7 +104,7 @@ object SRPCMethod : SClass {
                 argType
         ).associate { it.key to it }
 
-        fun make(item: RPCMethod.Returns): SimpleTypedObject = SimpleTypedObject(Returns).apply {
+        fun make(item: RPCMethod.Returns<*>): SimpleTypedObject = SimpleTypedObject(Returns).apply {
             this[argDescription] = item.description
             this[argType] = item.type.name
         }

@@ -1,6 +1,6 @@
 package com.ivieleague.kotlin.server.xodus
 
-import com.ivieleague.kotlin.server.access.Transaction
+import com.ivieleague.kotlin.server.rpc.Transaction
 import jetbrains.exodus.entitystore.Entity
 import jetbrains.exodus.entitystore.EntityRemovedInDatabaseException
 import jetbrains.exodus.entitystore.PersistentEntityStore

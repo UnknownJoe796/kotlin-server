@@ -12,7 +12,7 @@ import org.jetbrains.ktor.http.HttpStatusCode
 import org.jetbrains.ktor.routing.Route
 import org.jetbrains.ktor.routing.post
 
-private fun deserializeRPCRequestAndExecute(user: SimpleTypedObject?, tree: JsonNode, methods: Map<String, RPCMethod>): RPCResponse {
+private fun deserializeRPCRequestAndExecute(transaction: Transaction, tree: JsonNode, methods: Map<String, RPCMethod>): RPCResponse {
     val id = tree.get("id").asInt()
 
     val methodName = tree.get("method").asText()
@@ -58,10 +58,10 @@ private fun deserializeRPCRequestAndExecute(user: SimpleTypedObject?, tree: Json
     }
 
     return try {
-        val result = method.invoke(user, parameters)
+        val result = method.invoke(transaction, parameters)
         RPCResponse(
                 id,
-                result = (method.returns.type as SType<Any>).serialize(JsonGlobals.jsonNodeFactory, result)
+                result = (method.returns.type as SType<Any?>).serialize(JsonGlobals.jsonNodeFactory, result)
         )
     } catch (e: RPCException) {
         RPCResponse(
@@ -78,12 +78,17 @@ fun Route.rpc(methods: Map<String, RPCMethod>, userGetter: (ApplicationCall) -> 
             try {
                 val node = it.request.receiveJson<JsonNode>()!!
                 if (node.isObject) {
-                    val result = deserializeRPCRequestAndExecute(user, node, methods)
+                    val result = Transaction().use { txn ->
+                        deserializeRPCRequestAndExecute(txn, node, methods)
+                    }
                     it.respondJson(result, if (result.error == null) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+
                 } else {
-                    val results = node.elements().asSequence()
-                            .map { deserializeRPCRequestAndExecute(user, it, methods) }
-                            .toList()
+                    val results = Transaction().use { txn ->
+                        node.elements().asSequence()
+                                .map { deserializeRPCRequestAndExecute(txn, it, methods) }
+                                .toList()
+                    }
                     it.respondJson(results)
                 }
             } catch (e: Exception) {

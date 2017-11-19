@@ -1,8 +1,8 @@
 package com.ivieleague.kotlin.server.access
 
-import com.ivieleague.kotlin.server.type.SClass
+import com.ivieleague.kotlin.server.type.SType
 
 interface Schema {
-    val classes: Map<String, SClass>
-    val daos: Map<String, DAO>
+    val types: Map<String, SType<*>>
+    val daos: Map<String, DAO<*>>
 }

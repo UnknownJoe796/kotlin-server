@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.ivieleague.kotlin.server.type.meta.SEnumClass
 import java.util.*
 
-interface SEnum : SType<SEnum.Value> {
+interface SEnum : SType<SEnum.Value?> {
 
     override val name: String
     override val description: String

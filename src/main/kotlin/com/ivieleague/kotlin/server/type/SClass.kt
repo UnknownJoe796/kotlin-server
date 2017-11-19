@@ -19,9 +19,10 @@ interface SClass : SHasFields<TypedObject> {
 
     override val kclass get() = Map::class
 
-    override fun parse(node: JsonNode?): TypedObject? = if (node == null) null else parseDirect(JsonGlobals.jsonNodeFactory, node)
-    fun parseSimple(node: JsonNode): SimpleTypedObject? {
-        if (node.isNull) return null
+    override fun parse(node: JsonNode?): TypedObject = if (node == null) throw IllegalArgumentException()
+    else parseDirect(JsonGlobals.jsonNodeFactory, node)
+
+    fun parseSimple(node: JsonNode): SimpleTypedObject {
         val result = SimpleTypedObject(this)
         for ((key, field) in fields) {
             val value: JsonNode? = node.get(key)
@@ -30,14 +31,11 @@ interface SClass : SHasFields<TypedObject> {
         return result
     }
 
-    fun parseDirect(factory: JsonNodeFactory, node: JsonNode): JsonTypedObject? {
-        return if (node.isNull) null
-        else JsonTypedObject(this, factory, node as ObjectNode)
+    fun parseDirect(factory: JsonNodeFactory, node: JsonNode): JsonTypedObject {
+        return JsonTypedObject(this, factory, node as ObjectNode)
     }
 
-    override fun parse(parser: JsonParser): TypedObject? {
-        if (parser.currentToken == JsonToken.VALUE_NULL) return null
-
+    override fun parse(parser: JsonParser): TypedObject {
         assert(parser.currentToken == JsonToken.START_OBJECT)
 
         val result = SimpleTypedObject(this)
@@ -56,35 +54,36 @@ interface SClass : SHasFields<TypedObject> {
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun serialize(generator: JsonGenerator, value: TypedObject?) = generator.writeNullOr(value) {
-        writeStartObject()
-        for ((key, field) in fields) {
-            writeFieldName(key)
+    override fun serialize(generator: JsonGenerator, value: TypedObject) {
+        generator.apply {
+            writeStartObject()
+            for ((key, field) in fields) {
+                writeFieldName(key)
 
-            val item: Any? = it[field]
-            if (item == null)
-                writeNull()
-            else {
-                (field.type as SType<Any>).serialize(generator, item)
+                val item: Any? = value[field]
+                if (item == null)
+                    writeNull()
+                else {
+                    (field.type as SType<Any>).serialize(generator, item)
+                }
             }
+            writeEndObject()
         }
-        writeEndObject()
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun serialize(factory: JsonNodeFactory, value: TypedObject?): JsonNode {
+    override fun serialize(factory: JsonNodeFactory, value: TypedObject): JsonNode {
         return if (value is JsonTypedObject) value.source
-        else factory.nullNodeOr(value) {
-            objectNode().apply {
-                for ((key, field) in fields) {
-                    val item = it[field]
-                    if (item == null)
-                        set(key, nullNode())
-                    else {
-                        set(key, (field.type as SType<Any>).serialize(factory, item))
-                    }
+        else factory.objectNode().apply {
+            for ((key, field) in fields) {
+                val item = value[field]
+                if (item == null)
+                    set(key, nullNode())
+                else {
+                    set(key, (field.type as SType<Any>).serialize(factory, item))
                 }
             }
+
         }
     }
 
