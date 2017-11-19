@@ -43,6 +43,7 @@ class GetTypesRPCMethod(typesGetter: () -> Map<String, SType<*>>) : RPCMethod {
             while (queue.isNotEmpty()) {
                 val current = queue.first()
                 if (current in completed) continue
+                completed.add(current)
                 queue.remove(current)
                 output.add(current)
                 for (type in current.dependencies) {

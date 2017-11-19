@@ -24,7 +24,7 @@ class SMap<T> private constructor(val ofType: SType<T>) : SType<Map<String, T>> 
     }
 
     override fun parse(node: JsonNode?): Map<String, T> {
-        if (node == null) throw IllegalArgumentException()
+        if (node == null) return default
 
         val result = HashMap<String, T>()
         for ((key, value) in node.fields()) {
@@ -59,6 +59,7 @@ class SMap<T> private constructor(val ofType: SType<T>) : SType<Map<String, T>> 
 
     override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 
+    override val default: Map<String, T> get() = mapOf()
 
     companion object {
         private val cache = HashMap<SType<*>, SMap<*>>()

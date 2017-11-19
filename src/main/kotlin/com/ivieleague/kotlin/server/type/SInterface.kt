@@ -14,7 +14,7 @@ interface SInterface : SHasFields<TypedObject> {
 
     override val kclass get() = Map::class
     override fun parse(node: JsonNode?): TypedObject {
-        if (node == null) return throw IllegalArgumentException()
+        if (node == null) return default
         val typeString = node.get("@type").asText()
         val sclass = implementers[typeString] ?: throw IllegalArgumentException("Type $typeString not found as an implementer of $name")
         return sclass.parse(node)
@@ -53,4 +53,5 @@ interface SInterface : SHasFields<TypedObject> {
         get() = implementers.values
 
     override fun reflect(): TypedObject = SInterfaceClass.make(this)
+    override val default:TypedObject get() = SimpleTypedObject(implementers.values.first())
 }

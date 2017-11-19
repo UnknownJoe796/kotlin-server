@@ -7,13 +7,24 @@ import com.ivieleague.kotlin.server.receiveJson
 import com.ivieleague.kotlin.server.respondJson
 import com.ivieleague.kotlin.server.type.SType
 import com.ivieleague.kotlin.server.type.SimpleTypedObject
+import com.ivieleague.kotlin.server.type.TypedObject
 import org.jetbrains.ktor.application.ApplicationCall
 import org.jetbrains.ktor.http.HttpStatusCode
 import org.jetbrains.ktor.routing.Route
 import org.jetbrains.ktor.routing.post
 
 private fun deserializeRPCRequestAndExecute(transaction: Transaction, tree: JsonNode, methods: Map<String, RPCMethod>): RPCResponse {
-    val id = tree.get("id").asInt()
+    val id = try {
+        tree.get("id").asInt()
+    } catch(e:Exception){
+        return RPCResponse(
+                id = 0,
+                error = RPCError(
+                        code = RPCError.CODE_INVALID_REQUEST,
+                        message = "ID not provided."
+                )
+        )
+    }
 
     val methodName = tree.get("method").asText()
     val method = methods[methodName] ?: return RPCResponse(
@@ -71,20 +82,20 @@ private fun deserializeRPCRequestAndExecute(transaction: Transaction, tree: Json
     }
 }
 
-fun Route.rpc(methods: Map<String, RPCMethod>, userGetter: (ApplicationCall) -> SimpleTypedObject? = { null }) {
+fun Route.rpc(methods: Map<String, RPCMethod>, userGetter: (ApplicationCall) -> TypedObject? = { null }) {
     post() {
         exceptionWrap {
             val user = userGetter(it)
             try {
                 val node = it.request.receiveJson<JsonNode>()!!
                 if (node.isObject) {
-                    val result = Transaction().use { txn ->
+                    val result = Transaction(user).use { txn ->
                         deserializeRPCRequestAndExecute(txn, node, methods)
                     }
                     it.respondJson(result, if (result.error == null) HttpStatusCode.OK else HttpStatusCode.BadRequest)
 
                 } else {
-                    val results = Transaction().use { txn ->
+                    val results = Transaction(user).use { txn ->
                         node.elements().asSequence()
                                 .map { deserializeRPCRequestAndExecute(txn, it, methods) }
                                 .toList()

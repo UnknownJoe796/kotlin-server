@@ -12,20 +12,17 @@ object SField : SClass {
     val fieldName = TypeField(
             key = "name",
             description = "The name of the field.",
-            type = SString,
-            default = null
+            type = SString
     )
     val fieldDescription = TypeField(
             key = "description",
             description = "A description of the field.",
-            type = SString,
-            default = null
+            type = SString
     )
     val fieldType = TypeField(
             key = "type",
             description = "The type of the field.",
-            type = SString,
-            default = null
+            type = SString
     )
 //    val fieldDefault = TypeField(
 //            key = "default",

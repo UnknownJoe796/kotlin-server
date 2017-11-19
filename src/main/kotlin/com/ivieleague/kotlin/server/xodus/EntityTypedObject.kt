@@ -60,20 +60,18 @@ class EntityTypedObject(
 ) : MutableTypedObject {
     val idField = IdField[type]
 
-
-
     @Suppress("IMPLICIT_CAST_TO_ANY", "UNCHECKED_CAST")
-    override fun <T> get(field: TypeField<T>): T? {
+    override fun <T> get(field: TypeField<T>): T {
         if (field == idField)
             return entity.id.toString() as T
         val type = field.type
         return when (type) {
-            SBoolean, SDouble, SFloat, SInt, SLong, SString, is SPointer<*> -> entity.getProperty(field.key)
+            SBoolean, SDouble, SFloat, SInt, SLong, SString, is SPointer<*> -> entity.getProperty(field.key) ?: field.default
             SVoid -> Unit
-            SDate -> (entity.getProperty(field.key) as? String)?.let { SDate.format.parse(it) }
-            is SEnum -> (entity.getProperty(field.key) as? String)?.let { type.get(it) }
+            SDate -> (entity.getProperty(field.key) as? String)?.let { SDate.format.parse(it) } ?: field.default
+            is SEnum -> (entity.getProperty(field.key) as? String)?.let { type.get(it) } ?: field.default
             else -> deferReadToJson(field, type)
-        } as? T
+        } as T
     }
 
     private fun <T> deferReadToJson(field: TypeField<T>, type: SType<T>): T? {

@@ -15,4 +15,5 @@ object SVoid : SType<Unit> {
     override val name: String = "Void"
     override val description: String = "A type used to indicate no data."
     override fun reflect(): TypedObject = SPrimitiveClass.make(this)
+    override val default: Unit get() = Unit
 }

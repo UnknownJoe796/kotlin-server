@@ -8,11 +8,12 @@ import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
 object SLong : SType<Long> {
     override val kclass = Long::class
-    override fun parse(node: JsonNode?) = node!!.asLong()
+    override fun parse(node: JsonNode?) = node?.asLong() ?: default
     override fun parse(parser: JsonParser) = parser.longValue
     override fun serialize(generator: JsonGenerator, value: Long) = generator.writeNumber(value)
     override fun serialize(factory: JsonNodeFactory, value: Long): JsonNode = factory.numberNode(value)
     override val name: String = "Long"
     override val description: String = "An integer value of 64 bits."
     override fun reflect(): TypedObject = SPrimitiveClass.make(this)
+    override val default: Long = 0
 }

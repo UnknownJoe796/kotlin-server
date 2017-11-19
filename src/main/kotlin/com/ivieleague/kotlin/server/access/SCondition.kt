@@ -76,7 +76,8 @@ class SCondition private constructor(val thisType: SHasFields<TypedObject>) : SI
         override fun invoke(condition: TypedObject, testAgainst: TypedObject): Boolean {
             val valueObj = condition[fieldValue] ?: return true
             for (field in thisType.fields.values) {
-                val subvalue = valueObj[field] as? Exists<Any> ?: continue
+                val subvalue = valueObj[field] as Exists<Any?>
+                if(!subvalue.exists) continue
                 if (subvalue.value != testAgainst[field]) return false
             }
             return true
@@ -94,7 +95,8 @@ class SCondition private constructor(val thisType: SHasFields<TypedObject>) : SI
         override fun invoke(condition: TypedObject, testAgainst: TypedObject): Boolean {
             val valueObj = condition[fieldValue] ?: return true
             for (field in thisType.fields.values) {
-                val subvalue = valueObj[field] as? Exists<Any> ?: continue
+                val subvalue = valueObj[field] as Exists<Any?>
+                if(!subvalue.exists) continue
                 if (subvalue.value == testAgainst[field]) return false
             }
             return true
@@ -112,8 +114,8 @@ class SCondition private constructor(val thisType: SHasFields<TypedObject>) : SI
         override fun invoke(condition: TypedObject, testAgainst: TypedObject): Boolean {
             val valueObj = condition[fieldValue] ?: return true
             for (field in thisType.fields.values) {
-                val subvalueExists = valueObj[field] as? Exists<Comparable<Any>> ?: continue
-                val subvalue = subvalueExists.value ?: continue
+                val subvalue = valueObj[field] as Exists<Comparable<Any>?>
+                if(!subvalue.exists) continue
                 val testAgainstValue = testAgainst[field] as? Comparable<Any> ?: continue
                 if (!(testAgainstValue >= subvalue)) return false
             }
@@ -132,8 +134,8 @@ class SCondition private constructor(val thisType: SHasFields<TypedObject>) : SI
         override fun invoke(condition: TypedObject, testAgainst: TypedObject): Boolean {
             val valueObj = condition[fieldValue] ?: return true
             for (field in thisType.fields.values) {
-                val subvalueExists = valueObj[field] as? Exists<Comparable<Any>> ?: continue
-                val subvalue = subvalueExists.value ?: continue
+                val subvalue = valueObj[field] as Exists<Comparable<Any>?>
+                if(!subvalue.exists) continue
                 val testAgainstValue = testAgainst[field] as? Comparable<Any> ?: continue
                 if (!(testAgainstValue <= subvalue)) return false
             }
@@ -152,8 +154,8 @@ class SCondition private constructor(val thisType: SHasFields<TypedObject>) : SI
         override fun invoke(condition: TypedObject, testAgainst: TypedObject): Boolean {
             val valueObj = condition[fieldValue] ?: return true
             for (field in thisType.fields.values) {
-                val subvalueExists = valueObj[field] as? Exists<Comparable<Any>> ?: continue
-                val subvalue = subvalueExists.value ?: continue
+                val subvalue = valueObj[field] as Exists<Comparable<Any>?>
+                if(!subvalue.exists) continue
                 val testAgainstValue = testAgainst[field] as? Comparable<Any> ?: continue
                 if (!(testAgainstValue > subvalue)) return false
             }
@@ -172,8 +174,8 @@ class SCondition private constructor(val thisType: SHasFields<TypedObject>) : SI
         override fun invoke(condition: TypedObject, testAgainst: TypedObject): Boolean {
             val valueObj = condition[fieldValue] ?: return true
             for (field in thisType.fields.values) {
-                val subvalueExists = valueObj[field] as? Exists<Comparable<Any>> ?: continue
-                val subvalue = subvalueExists.value ?: continue
+                val subvalue = valueObj[field] as Exists<Comparable<Any>?>
+                if(!subvalue.exists) continue
                 val testAgainstValue = testAgainst[field] as? Comparable<Any> ?: continue
                 if (!(testAgainstValue < subvalue)) return false
             }

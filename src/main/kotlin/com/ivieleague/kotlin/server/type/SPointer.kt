@@ -9,7 +9,7 @@ import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 class SPointer<T> private constructor(val ofType: SType<T>) : SType<String> {
     override val kclass = ofType.kclass
 
-    override fun parse(node: JsonNode?) = node!!.asText()
+    override fun parse(node: JsonNode?) = node?.asText() ?: default
     override fun parse(parser: JsonParser) = parser.text
     override fun serialize(generator: JsonGenerator, value: String) = generator.writeString(value)
     override fun serialize(factory: JsonNodeFactory, value: String): JsonNode = factory.textNode(value)
@@ -21,6 +21,8 @@ class SPointer<T> private constructor(val ofType: SType<T>) : SType<String> {
         get() = listOf(ofType)
 
     override fun reflect(): TypedObject = SPrimitiveClass.make(this)
+
+    override val default: String = "FAIL"
 
     companion object {
         private val cache = HashMap<SType<*>, SPointer<*>>()

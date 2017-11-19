@@ -4,10 +4,7 @@ import com.ivieleague.kotlin.server.rpc.Transaction
 import com.ivieleague.kotlin.server.type.SType
 import java.util.*
 
-class MemoryDAO<T>(override val type: SType<T>) : ModifyDAO<T, T> {
-    override val modifyType: SType<T>
-        get() = type
-
+class MemoryDAO<T>(override val type: SType<T>) : DAO<T> {
     val data = HashMap<String, T>()
 
     override fun get(transaction: Transaction, pointer: String): T? = data[pointer]
@@ -19,10 +16,6 @@ class MemoryDAO<T>(override val type: SType<T>) : ModifyDAO<T, T> {
     }
 
     override fun set(transaction: Transaction, pointer: String, value: T) {
-        data[pointer] = value
-    }
-
-    override fun modify(transaction: Transaction, pointer: String, value: T) {
         data[pointer] = value
     }
 

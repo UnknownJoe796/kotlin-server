@@ -35,4 +35,5 @@ interface SEnum : SType<SEnum.Value?> {
         private val nameIndexes = WeakHashMap<SEnum, Map<String, Value>>()
         fun getNameIndex(enum: SEnum) = nameIndexes.getOrPut(enum) { enum.values.associateBy { it.name } }
     }
+    override val default: SEnum.Value? get() = null
 }

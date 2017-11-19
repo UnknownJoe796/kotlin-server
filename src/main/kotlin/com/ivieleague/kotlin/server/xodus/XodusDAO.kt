@@ -72,12 +72,16 @@ class XodusDAO(val store: PersistentEntityStore, override val type: SClass) : Mo
             conditionType.equal -> {
                 val value = condition[conditionType.fieldValue] ?: return null
                 type.fields.values.mapNotNull { field ->
-                    val subvalueExists = value[SPartialClass[type].mappedFields[field]!!] as? Exists<Comparable<*>>
-                    if (subvalueExists == null) null
-                    else txn.find(
-                            type.name,
-                            field.key,
-                            subvalueExists.value
+                    val subvalueExists = value[SPartialClass[type].mappedFields[field]!!] as Exists<Comparable<*>>
+                    subvalueExists.letNotNull(
+                            ifNotNull = {
+                                txn.find(
+                                        type.name,
+                                        field.key,
+                                        it
+                                )
+                            },
+                            otherwise = { null }
                     )
                 }.reduce { first, second ->
                     first.intersect(second)

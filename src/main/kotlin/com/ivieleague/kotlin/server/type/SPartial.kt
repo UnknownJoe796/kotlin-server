@@ -13,8 +13,8 @@ class SPartial<T>(val ofType: SType<T>) : SType<Exists<T>> {
     override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 
     override fun parse(node: JsonNode?): Exists<T> {
-        if (node == null) throw IllegalArgumentException()
-        return Exists(value = ofType.parse(node))
+        if (node == null) return Exists()
+        return Exists(ofType.parse(node))
     }
 
     override fun serialize(generator: JsonGenerator, value: Exists<T>) {
@@ -28,6 +28,7 @@ class SPartial<T>(val ofType: SType<T>) : SType<Exists<T>> {
         if (subvalue == null) return null
         else return ofType.serialize(factory, subvalue)
     }
+    override val default: Exists<T> = Exists()
 
     companion object {
         private val cache = HashMap<SType<*>, SPartial<*>>()
@@ -36,5 +37,17 @@ class SPartial<T>(val ofType: SType<T>) : SType<Exists<T>> {
 }
 
 class Exists<T>(
-        var value: T
-)
+        var value: T? = null,
+        var exists:Boolean = value != null
+){
+    inline fun letNotNull( ifNotNull:(T)->Unit){
+        if(exists){
+            ifNotNull.invoke(value as T)
+        }
+    }
+    inline fun <A> letNotNull( ifNotNull:(T)->A, otherwise:()->A):A{
+        return if(exists){
+            ifNotNull.invoke(value as T)
+        } else otherwise.invoke()
+    }
+}

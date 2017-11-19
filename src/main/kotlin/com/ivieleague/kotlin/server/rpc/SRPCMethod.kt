@@ -9,32 +9,27 @@ object SRPCMethod : SClass {
     val methodDescription = TypeField(
             key = "description",
             description = "A description of the method.",
-            type = SString,
-            default = null
+            type = SString
     )
     val methodArguments = TypeField(
             key = "arguments",
             description = "A list of arguments.",
-            type = SList[Argument],
-            default = listOf()
+            type = SList[Argument]
     )
     val methodReturns = TypeField(
             key = "returns",
             description = "A description of what the method returns.",
-            type = Returns,
-            default = null
+            type = Returns
     )
     val methodExceptions = TypeField(
             key = "exceptions",
             description = "A list of possible exceptions.",
-            type = SList[PotentialException],
-            default = listOf()
+            type = SList[PotentialException]
     )
     val methodDeprecated = TypeField(
             key = "deprecated",
             description = "Whether or not this method is deprecated.",
-            type = SBoolean,
-            default = false
+            type = SBoolean
     )
 
     override val fields: Map<String, TypeField<*>> = listOf<TypeField<*>>(
@@ -53,20 +48,17 @@ object SRPCMethod : SClass {
         val argKey = TypeField(
                 key = "key",
                 description = "The string key of the argument.",
-                type = SString,
-                default = null
+                type = SString
         )
         val argDescription = TypeField(
                 key = "description",
                 description = "A description of the argument.",
-                type = SString,
-                default = null
+                type = SString
         )
         val argType = TypeField(
                 key = "type",
                 description = "The name of the type of the argument.",
-                type = SString,
-                default = null
+                type = SString
         )
 
         override val fields: Map<String, TypeField<*>> = listOf<TypeField<*>>(
@@ -89,14 +81,12 @@ object SRPCMethod : SClass {
         val argDescription = TypeField(
                 key = "description",
                 description = "A description of the argument.",
-                type = SString,
-                default = null
+                type = SString
         )
         val argType = TypeField(
                 key = "type",
                 description = "The name of the type of the argument.",
-                type = SString,
-                default = null
+                type = SString
         )
 
         override val fields: Map<String, TypeField<*>> = listOf<TypeField<*>>(
@@ -117,26 +107,22 @@ object SRPCMethod : SClass {
         val argCode = TypeField(
                 key = "code",
                 description = "The integer code of this exception.",
-                type = SInt,
-                default = null
+                type = SInt
         )
         val argName = TypeField(
                 key = "name",
                 description = "The name of this exception.",
-                type = SString,
-                default = null
+                type = SString
         )
         val argDescription = TypeField(
                 key = "description",
                 description = "A description of the exception.",
-                type = SString,
-                default = null
+                type = SString
         )
         val argType = TypeField(
                 key = "type",
                 description = "The name of the type of the data in this exception.",
-                type = SString,
-                default = null
+                type = SString
         )
 
         override val fields: Map<String, TypeField<*>> = listOf<TypeField<*>>(

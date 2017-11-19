@@ -13,6 +13,7 @@ interface SClass : SHasFields<TypedObject> {
     override val name: String
     override val description: String
     val primaryKey: List<TypeField<*>> get() = listOf()
+    override val default: TypedObject get() = SimpleTypedObject(this)
 
     override val dependencies: Collection<SType<*>>
         get() = fields.map { it.value.type }

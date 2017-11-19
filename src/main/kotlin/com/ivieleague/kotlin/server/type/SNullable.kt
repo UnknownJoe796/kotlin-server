@@ -38,6 +38,7 @@ class SNullable<T> private constructor(val ofType: SType<T>) : SType<T?> {
         get() = listOf(ofType)
 
     override fun reflect(): TypedObject = SPrimitiveClass.make(this)
+    override val default: T? = null
 
     companion object {
         private val cache = HashMap<SType<*>, SNullable<*>>()

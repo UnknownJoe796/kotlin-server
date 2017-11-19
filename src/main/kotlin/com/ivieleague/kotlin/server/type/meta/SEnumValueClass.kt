@@ -9,14 +9,12 @@ object SEnumValueClass : SClass {
     val fieldName = TypeField(
             key = "name",
             description = "The name of the enum value.",
-            type = SString,
-            default = null
+            type = SString
     )
     val fieldDescription = TypeField(
             key = "description",
             description = "A description of the enum value.",
-            type = SString,
-            default = null
+            type = SString
     )
 
     override val fields: Map<String, TypeField<*>> = listOf<TypeField<*>>(

@@ -19,4 +19,6 @@ interface SType<T> {
     fun parse(parser: JsonParser): T = parse(parser.readValueAsTree<JsonNode>())
     fun serialize(generator: JsonGenerator, value: T)
     fun serialize(factory: JsonNodeFactory, value: T): JsonNode?
+
+    val default:T
 }

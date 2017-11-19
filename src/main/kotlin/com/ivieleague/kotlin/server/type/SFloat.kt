@@ -8,11 +8,12 @@ import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
 object SFloat : SType<Float> {
     override val kclass = Float::class
-    override fun parse(node: JsonNode?) = node!!.asDouble().toFloat()
+    override fun parse(node: JsonNode?) = node?.asDouble()?.toFloat() ?: default
     override fun parse(parser: JsonParser) = parser.floatValue
     override fun serialize(generator: JsonGenerator, value: Float) = generator.writeNumber(value)
     override fun serialize(factory: JsonNodeFactory, value: Float): JsonNode = factory.numberNode(value)
     override val name: String = "Float"
     override val description: String = "A single-precision floating point number."
     override fun reflect(): TypedObject = SPrimitiveClass.make(this)
+    override val default: Float = 0f
 }

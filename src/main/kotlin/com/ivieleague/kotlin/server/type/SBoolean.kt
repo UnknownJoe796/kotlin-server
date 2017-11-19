@@ -9,10 +9,11 @@ import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 object SBoolean : SType<Boolean> {
     override val kclass = Boolean::class
     override fun parse(parser: JsonParser): Boolean = parser.booleanValue
-    override fun parse(node: JsonNode?) = node!!.asBoolean()
+    override fun parse(node: JsonNode?) = node?.asBoolean() ?: default
     override fun serialize(generator: JsonGenerator, value: Boolean) = generator.writeBoolean(value)
     override fun serialize(factory: JsonNodeFactory, value: Boolean): JsonNode = factory.booleanNode(value)
     override val name: String = "Boolean"
     override val description: String = "A boolean value, which can be either true or false."
     override fun reflect(): TypedObject = SPrimitiveClass.make(this)
+    override val default: Boolean = false
 }

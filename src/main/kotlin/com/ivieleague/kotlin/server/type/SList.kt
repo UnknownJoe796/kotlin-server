@@ -23,7 +23,7 @@ class SList<T> private constructor(val ofType: SType<T>) : SType<List<T>> {
     }
 
     override fun parse(node: JsonNode?): List<T> {
-        if (node == null) throw IllegalArgumentException()
+        if (node == null) return default
 
         val result = ArrayList<T>()
         for (value in node.elements()) {
@@ -57,6 +57,8 @@ class SList<T> private constructor(val ofType: SType<T>) : SType<List<T>> {
         get() = listOf(ofType)
 
     override fun reflect(): TypedObject = SPrimitiveClass.make(this)
+    override val default: List<T>
+        get() = listOf()
 
     companion object {
         private val cache = HashMap<SType<*>, SList<*>>()
