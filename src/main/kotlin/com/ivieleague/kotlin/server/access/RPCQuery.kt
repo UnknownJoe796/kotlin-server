@@ -32,7 +32,7 @@ class RPCQuery<T>(val dao: QueryableDAO<T>) : RPCMethod {
     val argumentStart = RPCMethod.Argument(
             key = "start",
             description = "The start to query for.",
-            type = dao.type
+            type = SNullable[dao.type]
     )
 
     override val arguments = listOf(
@@ -43,8 +43,8 @@ class RPCQuery<T>(val dao: QueryableDAO<T>) : RPCMethod {
     )
 
     override val returns = RPCMethod.Returns(
-            description = "The pointer to the new value.",
-            type = SPointer[dao.type]
+            description = "The values found.",
+            type = SList[dao.type]
     )
 
     override val potentialExceptions: Map<Int, RPCMethod.PotentialException<*>> = mapOf()

@@ -90,17 +90,23 @@ suspend fun ApplicationCall.respondJson(result: Any?, statusCode: HttpStatusCode
     }
 }
 
-inline suspend fun <reified T> ApplicationRequest.receiveJson(): T? {
+inline suspend fun <reified T> ApplicationRequest.receiveJson2(): T? {
     val contentType = this.contentType()
     try {
-        return when (contentType) {
+        val noparams = contentType.withoutParameters()
+        return when (noparams) {
             JsonGlobals.ContentTypeApplicationMessagePack -> JsonGlobals.MessagePackObjectMapper.readValue(receive<InputStream>(), T::class.java)
             JsonGlobals.ContentTypeApplicationBson -> JsonGlobals.BsonObjectMapper.readValue(receive<InputStream>(), T::class.java)
             ContentType.Application.Json -> JsonGlobals.JsonObjectMapper.readValue(receive<String>(), T::class.java)
-            ContentType.Any -> JsonGlobals.JsonObjectMapper.readValue(receive<String>(), T::class.java)
-            else -> throw exceptionBadRequest("Cannot read format $contentType")
+            ContentType.Any -> JsonGlobals.JsonObjectMapper.readValue(receive<String>().also { println(it) }, T::class.java)
+            else -> throw exceptionBadRequest("Cannot read format '$noparams', supported types are ${listOf(
+                    JsonGlobals.ContentTypeApplicationMessagePack,
+                    JsonGlobals.ContentTypeApplicationBson,
+                    ContentType.Application.Json
+            ).joinToString()}")
         }
     } catch (e: Exception) {
-        throw exceptionBadRequest("Malformed $contentType")
+        e.printStackTrace()
+        throw e
     }
 }

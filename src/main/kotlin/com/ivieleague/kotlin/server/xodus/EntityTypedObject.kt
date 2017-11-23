@@ -1,5 +1,6 @@
 package com.ivieleague.kotlin.server.xodus
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.ivieleague.kotlin.server.JsonGlobals
 import com.ivieleague.kotlin.server.access.IdField
 import com.ivieleague.kotlin.server.type.*
@@ -52,6 +53,9 @@ fun StoreTransaction.getTypedObjectOrNull(type: SClass, id: String) = getEntityO
 fun <T : Comparable<*>> StoreTransaction.find(type: SClass, property: TypeField<T>, value: T)
         = find(type.name, property.key, value)
 
+fun <T : Comparable<*>> StoreTransaction.findNullable(type: SClass, property: TypeField<T?>, value: T)
+        = find(type.name, property.key, value)
+
 
 class EntityTypedObject(
         override val type: SClass,
@@ -65,45 +69,44 @@ class EntityTypedObject(
         if (field == idField)
             return entity.id.toString() as T
         val type = field.type
-        return when (type) {
-            SBoolean, SDouble, SFloat, SInt, SLong, SString, is SPointer<*> -> entity.getProperty(field.key) ?: field.default
-            SVoid -> Unit
-            SDate -> (entity.getProperty(field.key) as? String)?.let { SDate.format.parse(it) } ?: field.default
-            is SEnum -> (entity.getProperty(field.key) as? String)?.let { type.get(it) } ?: field.default
-            else -> deferReadToJson(field, type)
-        } as T
-    }
-
-    private fun <T> deferReadToJson(field: TypeField<T>, type: SType<T>): T? {
-        return try {
-            (entity.getProperty(field.key) as? String)?.let { type.parse(JsonGlobals.JsonObjectMapper.readTree(it)) }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
+        return convertFromXodus<T>(field.type, entity.getProperty(field.key))
     }
 
     @Suppress("IMPLICIT_CAST_TO_ANY", "UNCHECKED_CAST")
     override operator fun <T> set(field: TypeField<T>, value: T) {
         val type = field.type
-        when (type) {
-            SBoolean, SDouble, SFloat, SInt, SLong, SString, is SPointer<*> -> entity.setPropertyNullable(field.key, value as? Comparable<Nothing>)
-            SVoid -> Unit
-            SDate -> entity.setPropertyNullable(field.key, value?.let { SDate.format.format(it as ZonedDateTime) })
-            is SEnum -> entity.setPropertyNullable(field.key, (value as? SEnum.Value)?.name)
-            else -> deferWriteToJson(field, value, type)
-        } as? T
+        val write = convertToXodus(type, value)
+        if (write != null) {
+            entity.setPropertyNullable(field.key, write)
+        }
     }
 
-    private fun <T> deferWriteToJson(field: TypeField<T>, value: T, type: SType<T>): Boolean? {
-        return try {
-            entity.setPropertyNullable(
-                    field.key,
-                    value?.let { type.serialize(JsonGlobals.jsonNodeFactory, it).toString() }
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
+    companion object {
+        @Suppress("IMPLICIT_CAST_TO_ANY")
+        fun <T> convertFromXodus(type: SType<T>, value: Comparable<*>?): T {
+            return when (type) {
+                SBoolean, SDouble, SFloat, SInt, SLong, SString, is SPointer<*> -> value
+                SVoid -> Unit
+                SDate -> (value as? String)?.let { SDate.format.parse(it) }
+                is SEnum -> (value as? String)?.let { type[it] }
+                else -> value?.let { deferReadToJson(type, it as String) }
+            } as T
         }
+
+        private fun <T> deferReadToJson(type: SType<T>, value: String): T =
+                type.parse(JsonGlobals.JsonObjectMapper.readTree(value))
+
+        fun <T> convertToXodus(type: SType<T>, value: T): Comparable<*>? {
+            return when (type) {
+                SBoolean, SDouble, SFloat, SInt, SLong, SString, is SPointer<*> -> value as Comparable<*>
+                SVoid -> null
+                SDate -> (value as? ZonedDateTime)?.let { SDate.format.format(it) }
+                is SEnum -> (value as? SEnum.Value)?.name
+                else -> deferWriteToJson(type, value)?.toString()
+            }
+        }
+
+        private fun <T> deferWriteToJson(type: SType<T>, value: T): JsonNode? =
+                type.serialize(JsonGlobals.jsonNodeFactory, value)
     }
 }

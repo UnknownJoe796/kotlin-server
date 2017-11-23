@@ -21,7 +21,7 @@ class SPartialClass private constructor(val type: SHasFields<TypedObject>) : SCl
 
     @Suppress("UNCHECKED_CAST")
     fun pullFromPartial(into: MutableTypedObject, fromPartial: TypedObject) {
-        for (field in this.type.fields) {
+        for (field in this.type.fields.values) {
             val untypedField = field as TypeField<Any?>
             val untypedPartialField = mappedFields[untypedField] as TypeField<Exists<Any?>>
             val exists = fromPartial[untypedPartialField]

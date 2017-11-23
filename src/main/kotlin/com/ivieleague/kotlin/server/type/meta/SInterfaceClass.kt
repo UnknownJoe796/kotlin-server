@@ -30,6 +30,6 @@ object SInterfaceClass : SClass {
         this[STypeInterface.fieldName] = type.name
         this[STypeInterface.fieldDescription] = type.description
         this[fieldFields] = type.fields.mapValues { SField.make(it.value) }
-        this[fieldImplementers] = type.fields.keys.toList()
+        this[fieldImplementers] = type.implementers.keys.toList()
     }
 }

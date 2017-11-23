@@ -5,6 +5,7 @@ import com.ivieleague.kotlin.server.rpc.Transaction
 import com.ivieleague.kotlin.server.rpc.get
 import com.ivieleague.kotlin.server.type.SClass
 import com.ivieleague.kotlin.server.type.SPointer
+import com.ivieleague.kotlin.server.type.SVoid
 import com.ivieleague.kotlin.server.type.TypedObject
 
 class RPCModify<T, M>(val dao: ModifyDAO<T, M>) : RPCMethod {
@@ -24,8 +25,8 @@ class RPCModify<T, M>(val dao: ModifyDAO<T, M>) : RPCMethod {
     override val arguments = listOf(argumentPointer, argumentValue)
 
     override val returns = RPCMethod.Returns(
-            description = "The pointer to the new value.",
-            type = SPointer[dao.type]
+            description = "",
+            type = SVoid
     )
 
     override val potentialExceptions: Map<Int, RPCMethod.PotentialException<*>> = mapOf()

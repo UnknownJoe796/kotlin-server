@@ -20,7 +20,7 @@ interface SClass : SHasFields<TypedObject> {
 
     override val kclass get() = Map::class
 
-    override fun parse(node: JsonNode?): TypedObject = if (node == null) throw IllegalArgumentException()
+    override fun parse(node: JsonNode?): TypedObject = if (node == null || node.isNull) throw IllegalArgumentException("Node '$node' cannot be parsed into an instance of $name.")
     else parseDirect(JsonGlobals.jsonNodeFactory, node)
 
     fun parseSimple(node: JsonNode): SimpleTypedObject {

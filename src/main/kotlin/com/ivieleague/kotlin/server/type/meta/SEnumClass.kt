@@ -6,9 +6,9 @@ object SEnumClass : SClass {
     override val name: String = "Enum"
     override val description: String = "Metadata about an enum."
 
-    val fieldFields = TypeField(
-            key = "fields",
-            description = "A list of the values.",
+    val fieldOptions = TypeField(
+            key = "options",
+            description = "A list of the options.",
             type = SList[SEnumValueClass],
             default = listOf()
     )
@@ -16,13 +16,13 @@ object SEnumClass : SClass {
     override val fields: Map<String, TypeField<*>> = listOf<TypeField<*>>(
             STypeInterface.fieldName,
             STypeInterface.fieldDescription,
-            fieldFields
+            fieldOptions
     ).associate { it.key to it }
 
     fun make(enum: SEnum) = SimpleTypedObject(this).apply {
         this[STypeInterface.fieldName] = enum.name
         this[STypeInterface.fieldDescription] = enum.description
-        this[fieldFields] = enum.values.map { SEnumValueClass.make(it) }
+        this[fieldOptions] = enum.values.map { SEnumValueClass.make(it) }
     }
 }
 
