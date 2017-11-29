@@ -3,6 +3,9 @@ package com.ivieleague.kotlin.server.access
 import com.ivieleague.kotlin.server.type.SClass
 import com.ivieleague.kotlin.server.type.SEnum
 
+/**
+ * A generated enum type that represents the various ways a query could be sorted.
+ */
 class SSort private constructor(val type: SClass) : SEnum {
     override val name: String = "${type.name}_Sort"
     override val description: String = "The ways that this can be sorted."

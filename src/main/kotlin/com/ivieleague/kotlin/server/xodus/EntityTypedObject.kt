@@ -57,6 +57,9 @@ fun <T : Comparable<*>> StoreTransaction.findNullable(type: SClass, property: Ty
         = find(type.name, property.key, value)
 
 
+/**
+ * A TypedObject that is backed by a Xodus entity.  This allows for persisting a TypedObject effectively.
+ */
 class EntityTypedObject(
         override val type: SClass,
         val transaction: StoreTransaction,

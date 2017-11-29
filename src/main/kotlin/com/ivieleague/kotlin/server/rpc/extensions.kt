@@ -7,10 +7,52 @@ import com.ivieleague.kotlin.server.receiveJson2
 import com.ivieleague.kotlin.server.respondJson
 import com.ivieleague.kotlin.server.type.SType
 import com.ivieleague.kotlin.server.type.TypedObject
-import org.jetbrains.ktor.application.ApplicationCall
-import org.jetbrains.ktor.http.HttpStatusCode
-import org.jetbrains.ktor.routing.Route
-import org.jetbrains.ktor.routing.post
+import io.ktor.application.ApplicationCall
+import io.ktor.http.HttpStatusCode
+import io.ktor.routing.Route
+import io.ktor.routing.post
+
+fun Route.rpc(
+        methods: Map<String, RPCMethod>,
+        userGetter: (ApplicationCall) -> TypedObject? = { null },
+        onCompute: (TypedObject?, JsonNode?, RPCResponse) -> Unit = { _, _, _ -> }
+) {
+    post() {
+        exceptionWrap {
+            val user = userGetter(it)
+            try {
+                val node = it.request.receiveJson2<JsonNode>()!!
+                if (node.isObject) {
+                    val result = Transaction(user).use { txn ->
+                        deserializeRPCRequestAndExecute(txn, node, methods)
+                    }
+                    onCompute.invoke(user, node, result)
+                    it.respondJson(result, if (result.error == null) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+
+                } else {
+                    val results = Transaction(user).use { txn ->
+                        node.elements().asSequence()
+                                .map { deserializeRPCRequestAndExecute(txn, it, methods) }
+                                .toList()
+                    }
+                    results.forEach { onCompute.invoke(user, node, it) }
+                    it.respondJson(results)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                val response = RPCResponse(
+                        id = 0,
+                        error = RPCError(
+                                RPCError.CODE_PARSE_ERROR,
+                                e.message ?: "Unknown parsing exception"
+                        )
+                )
+                onCompute.invoke(user, null, response)
+                it.respondJson(response)
+            }
+        }
+    }
+}
 
 private fun deserializeRPCRequestAndExecute(transaction: Transaction, tree: JsonNode, methods: Map<String, RPCMethod>): RPCResponse {
     val id = try {
@@ -92,43 +134,5 @@ private fun deserializeRPCRequestAndExecute(transaction: Transaction, tree: Json
                 id,
                 error = e.rpcError
         )
-    }
-}
-
-fun Route.rpc(methods: Map<String, RPCMethod>, userGetter: (ApplicationCall) -> TypedObject? = { null }, onCompute: (TypedObject?, JsonNode?, RPCResponse) -> Unit = { _, _, _ -> }) {
-    post() {
-        exceptionWrap {
-            val user = userGetter(it)
-            try {
-                val node = it.request.receiveJson2<JsonNode>()!!
-                if (node.isObject) {
-                    val result = Transaction(user).use { txn ->
-                        deserializeRPCRequestAndExecute(txn, node, methods)
-                    }
-                    onCompute.invoke(user, node, result)
-                    it.respondJson(result, if (result.error == null) HttpStatusCode.OK else HttpStatusCode.BadRequest)
-
-                } else {
-                    val results = Transaction(user).use { txn ->
-                        node.elements().asSequence()
-                                .map { deserializeRPCRequestAndExecute(txn, it, methods) }
-                                .toList()
-                    }
-                    results.forEach { onCompute.invoke(user, node, it) }
-                    it.respondJson(results)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                val response = RPCResponse(
-                        id = 0,
-                        error = RPCError(
-                                RPCError.CODE_PARSE_ERROR,
-                                e.message ?: "Unknown parsing exception"
-                        )
-                )
-                onCompute.invoke(user, null, response)
-                it.respondJson(response)
-            }
-        }
     }
 }

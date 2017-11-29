@@ -6,6 +6,12 @@ import com.auth0.jwt.exceptions.JWTVerificationException
 import com.auth0.jwt.exceptions.TokenExpiredException
 import java.util.*
 
+/**
+ * An object that creates and validates JWTs.  It must be supplied with signing information through the [algorithm].
+ * @param issuer The issuer of the token.
+ * @param expireMilliseconds The number of milliseconds the token should remain active for.
+ * @param algorithm The algorithm used to sign tokens.
+ */
 data class TokenInformation(
         val issuer: String,
         val expireMilliseconds: Long,

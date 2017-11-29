@@ -7,13 +7,16 @@ import jetbrains.exodus.entitystore.EntityIterable
 import jetbrains.exodus.entitystore.PersistentEntityStore
 import jetbrains.exodus.entitystore.StoreTransaction
 
+/**
+ * A DAO backed by a Xodus database.
+ */
 class XodusDAO(val store: PersistentEntityStore, override val type: SClass) : ModifyDAO<TypedObject, TypedObject>, QueryableDAO<TypedObject> {
 
     override val modifyType: SPartialClass
         get() = SPartialClass[type]
 
     init {
-        assert(type.fields.values.contains(IdField[type]))
+        assert(type.fields.values.contains(IdField[type])) { "${type.name} does not contain ID field" }
     }
 
     override fun get(transaction: Transaction, pointer: String): TypedObject? {

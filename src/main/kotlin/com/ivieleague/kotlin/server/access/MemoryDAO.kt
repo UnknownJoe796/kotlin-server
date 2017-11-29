@@ -4,6 +4,9 @@ import com.ivieleague.kotlin.server.rpc.Transaction
 import com.ivieleague.kotlin.server.type.SType
 import java.util.*
 
+/**
+ * A very simple DAO that runs in memory with no persistence.
+ */
 class MemoryDAO<T>(override val type: SType<T>) : DAO<T> {
     val data = HashMap<String, T>()
 

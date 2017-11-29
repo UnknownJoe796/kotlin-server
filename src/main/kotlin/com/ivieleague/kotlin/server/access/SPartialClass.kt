@@ -2,6 +2,10 @@ package com.ivieleague.kotlin.server.access
 
 import com.ivieleague.kotlin.server.type.*
 
+/**
+ * Represents a version of a type where very property may or may not be included in the object.
+ * Very useful for doing partial modifications.  Think of HTTP PATCH.
+ */
 class SPartialClass private constructor(val type: SHasFields<TypedObject>) : SClass {
     override val name: String
         get() = type.name + "_Partial"

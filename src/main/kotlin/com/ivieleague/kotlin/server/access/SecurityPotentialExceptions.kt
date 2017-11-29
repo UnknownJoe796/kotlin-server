@@ -3,6 +3,9 @@ package com.ivieleague.kotlin.server.access
 import com.ivieleague.kotlin.server.rpc.RPCMethod
 import com.ivieleague.kotlin.server.type.SVoid
 
+/**
+ * Various exceptions that can happen when accessing the database directly.
+ */
 object SecurityPotentialExceptions {
     const val START_CODE = 180
 

@@ -7,6 +7,10 @@ import jetbrains.exodus.entitystore.PersistentEntityStore
 import jetbrains.exodus.entitystore.StoreTransaction
 import java.util.*
 
+/**
+ * Various extensions for Xodus.
+ */
+
 inline fun <T> StoreTransaction.use(action: (StoreTransaction) -> T): T {
     return try {
         val result = action.invoke(this)
