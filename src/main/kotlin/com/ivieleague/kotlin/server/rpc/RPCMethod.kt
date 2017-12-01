@@ -1,25 +1,24 @@
 package com.ivieleague.kotlin.server.rpc
 
 import com.ivieleague.kotlin.server.type.SType
-import com.ivieleague.kotlin.server.type.SimpleTypedObject
 
 
 interface RPCMethod {
     val description: String
-    val arguments: List<Argument>
-    val returns: Returns
+    val arguments: List<Argument<*>>
+    val returns: Returns<*>
     val potentialExceptions: Map<Int, PotentialException<*>>
     val deprecated: Boolean get() = false
 
-    data class Argument(
+    data class Argument<T>(
             val key: String,
             val description: String,
-            val type: SType<*>
+            val type: SType<T>
     )
 
-    data class Returns(
+    data class Returns<T>(
             val description: String,
-            val type: SType<*>
+            val type: SType<T>
     )
 
     data class PotentialException<T : Any>(
@@ -36,6 +35,7 @@ interface RPCMethod {
     }
 
     @Throws(RPCException::class)
-    operator fun invoke(user: SimpleTypedObject?, arguments: Map<String, Any?>): Any?
+    operator fun invoke(transaction: Transaction, arguments: Map<String, Any?>): Any?
 }
 
+operator fun <T> Map<String, Any?>.get(argument: RPCMethod.Argument<T>): T? = get(argument.key) as? T

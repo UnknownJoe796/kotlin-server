@@ -13,8 +13,6 @@ object SPrimitives {
             SFloat,
             SDouble,
             SString,
-            SUntypedList,
-            SUntypedMap,
             SDate
     )
 
@@ -27,15 +25,11 @@ object SPrimitives {
         node.isFloat -> SFloat
         node.isDouble -> SDouble
         node.isTextual -> SString
-        node.isObject -> SUntypedMap
-        node.isArray -> SUntypedList
         node.isNull -> SVoid
         else -> throw IllegalArgumentException("No default for node.")
     }
 
     fun getDefault(token: JsonToken): SType<*> = when (token) {
-        JsonToken.START_OBJECT -> SUntypedMap
-        JsonToken.START_ARRAY -> SUntypedList
         JsonToken.VALUE_STRING -> SString
         JsonToken.VALUE_NUMBER_INT -> SLong
         JsonToken.VALUE_NUMBER_FLOAT -> SDouble

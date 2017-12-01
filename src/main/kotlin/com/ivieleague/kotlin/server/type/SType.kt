@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import kotlin.reflect.KClass
 
-interface SType<T : Any> {
+interface SType<T> {
     val name: String
     val description: String
     val dependencies: Collection<SType<*>> get() = listOf()
@@ -15,8 +15,10 @@ interface SType<T : Any> {
     val jclass: Class<*> get() = kclass.java
     fun reflect(): TypedObject
 
-    fun parse(node: JsonNode): T?
-    fun parse(parser: JsonParser): T? = parse(parser.readValueAsTree<JsonNode>())
-    fun serialize(generator: JsonGenerator, value: T?)
-    fun serialize(factory: JsonNodeFactory, value: T?): JsonNode
+    fun parse(node: JsonNode?): T
+    fun parse(parser: JsonParser): T = parse(parser.readValueAsTree<JsonNode>())
+    fun serialize(generator: JsonGenerator, value: T)
+    fun serialize(factory: JsonNodeFactory, value: T): JsonNode?
+
+    val default:T
 }

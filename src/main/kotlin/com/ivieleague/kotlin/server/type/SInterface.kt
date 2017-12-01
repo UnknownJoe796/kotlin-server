@@ -7,44 +7,45 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.ivieleague.kotlin.server.type.meta.SInterfaceClass
 import com.lightningkite.kotlin.cast
 
-interface SInterface : SType<TypedObject> {
+interface SInterface : SHasFields<TypedObject> {
     override val name: String
     override val description: String
-    val fields: Map<String, SClass.Field<*>>
     val implementers: Map<String, SClass>
 
     override val kclass get() = Map::class
-    override fun parse(node: JsonNode): TypedObject? {
-        if (node.isNull) return null
+    override fun parse(node: JsonNode?): TypedObject {
+        if (node == null) return default
         val typeString = node.get("@type").asText()
         val sclass = implementers[typeString] ?: throw IllegalArgumentException("Type $typeString not found as an implementer of $name")
         return sclass.parse(node)
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun serialize(generator: JsonGenerator, value: TypedObject?) = generator.writeNullOr(value) {
-        writeStartObject()
+    override fun serialize(generator: JsonGenerator, value: TypedObject) {
+        generator.apply {
+            writeStartObject()
 
-        writeFieldName("@type")
-        writeString(it.type.name)
+            writeFieldName("@type")
+            writeString(value.type.name)
 
-        for ((key, field) in it.type.fields) {
-            writeFieldName(key)
+            for ((key, field) in value.type.fields) {
+                writeFieldName(key)
 
-            val item: Any? = it[field]
-            if (item == null)
-                writeNull()
-            else {
-                (field.type as SType<Any>).serialize(generator, item)
+                val item: Any? = value[field]
+                if (item == null)
+                    writeNull()
+                else {
+                    (field.type as SType<Any>).serialize(generator, item)
+                }
             }
+            writeEndObject()
         }
-        writeEndObject()
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun serialize(factory: JsonNodeFactory, value: TypedObject?) = factory.nullNodeOr(value) {
-        it.type.serialize(factory, it).cast<ObjectNode>().apply {
-            set("@type", factory.textNode(it.type.name))
+    override fun serialize(factory: JsonNodeFactory, value: TypedObject): JsonNode {
+        return value.type.serialize(factory, value).cast<ObjectNode>().apply {
+            set("@type", factory.textNode(value.type.name))
         }
     }
 
@@ -52,4 +53,5 @@ interface SInterface : SType<TypedObject> {
         get() = implementers.values
 
     override fun reflect(): TypedObject = SInterfaceClass.make(this)
+    override val default:TypedObject get() = SimpleTypedObject(implementers.values.first())
 }

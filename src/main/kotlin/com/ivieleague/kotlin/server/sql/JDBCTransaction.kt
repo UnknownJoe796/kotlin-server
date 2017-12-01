@@ -1,6 +1,6 @@
 package com.ivieleague.kotlin.server.sql
 
-import com.ivieleague.kotlin.server.access.Transaction
+import com.ivieleague.kotlin.server.rpc.Transaction
 import java.sql.Connection
 import java.util.*
 

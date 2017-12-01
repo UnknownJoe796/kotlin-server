@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.ivieleague.kotlin.server.type.meta.SEnumClass
 import java.util.*
 
-interface SEnum : SType<SEnum.Value> {
+interface SEnum : SType<SEnum.Value?> {
 
     override val name: String
     override val description: String
@@ -21,7 +21,7 @@ interface SEnum : SType<SEnum.Value> {
     operator fun get(name: String): Value? = getNameIndex(this)[name]
 
     override fun parse(parser: JsonParser) = if (parser.currentToken == JsonToken.VALUE_NULL) null else get(parser.text)
-    override fun parse(node: JsonNode): SEnum.Value? = if (node.isNull) null else get(node.asText())
+    override fun parse(node: JsonNode?): SEnum.Value? = if (node == null) null else if (node.isNull) null else get(node.asText())
 
     override fun reflect(): TypedObject = SEnumClass.make(this)
 
@@ -35,4 +35,5 @@ interface SEnum : SType<SEnum.Value> {
         private val nameIndexes = WeakHashMap<SEnum, Map<String, Value>>()
         fun getNameIndex(enum: SEnum) = nameIndexes.getOrPut(enum) { enum.values.associateBy { it.name } }
     }
+    override val default: SEnum.Value? get() = null
 }

@@ -3,17 +3,69 @@ package com.ivieleague.kotlin.server.rpc
 import com.fasterxml.jackson.databind.JsonNode
 import com.ivieleague.kotlin.server.JsonGlobals
 import com.ivieleague.kotlin.server.exceptionWrap
-import com.ivieleague.kotlin.server.receiveJson
+import com.ivieleague.kotlin.server.receiveJson2
 import com.ivieleague.kotlin.server.respondJson
 import com.ivieleague.kotlin.server.type.SType
-import com.ivieleague.kotlin.server.type.SimpleTypedObject
-import org.jetbrains.ktor.application.ApplicationCall
-import org.jetbrains.ktor.http.HttpStatusCode
-import org.jetbrains.ktor.routing.Route
-import org.jetbrains.ktor.routing.post
+import com.ivieleague.kotlin.server.type.TypedObject
+import io.ktor.application.ApplicationCall
+import io.ktor.http.HttpStatusCode
+import io.ktor.routing.Route
+import io.ktor.routing.post
 
-private fun deserializeRPCRequestAndExecute(user: SimpleTypedObject?, tree: JsonNode, methods: Map<String, RPCMethod>): RPCResponse {
-    val id = tree.get("id").asInt()
+fun Route.rpc(
+        methods: Map<String, RPCMethod>,
+        userGetter: (ApplicationCall) -> TypedObject? = { null },
+        onCompute: (TypedObject?, JsonNode?, RPCResponse) -> Unit = { _, _, _ -> }
+) {
+    post() {
+        exceptionWrap {
+            val user = userGetter(it)
+            try {
+                val node = it.request.receiveJson2<JsonNode>()!!
+                if (node.isObject) {
+                    val result = Transaction(user).use { txn ->
+                        deserializeRPCRequestAndExecute(txn, node, methods)
+                    }
+                    onCompute.invoke(user, node, result)
+                    it.respondJson(result, if (result.error == null) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+
+                } else {
+                    val results = Transaction(user).use { txn ->
+                        node.elements().asSequence()
+                                .map { deserializeRPCRequestAndExecute(txn, it, methods) }
+                                .toList()
+                    }
+                    results.forEach { onCompute.invoke(user, node, it) }
+                    it.respondJson(results)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                val response = RPCResponse(
+                        id = 0,
+                        error = RPCError(
+                                RPCError.CODE_PARSE_ERROR,
+                                e.message ?: "Unknown parsing exception"
+                        )
+                )
+                onCompute.invoke(user, null, response)
+                it.respondJson(response)
+            }
+        }
+    }
+}
+
+private fun deserializeRPCRequestAndExecute(transaction: Transaction, tree: JsonNode, methods: Map<String, RPCMethod>): RPCResponse {
+    val id = try {
+        tree.get("id").asInt()
+    } catch (e: Exception) {
+        return RPCResponse(
+                id = 0,
+                error = RPCError(
+                        code = RPCError.CODE_INVALID_REQUEST,
+                        message = "ID not provided."
+                )
+        )
+    }
 
     val methodName = tree.get("method").asText()
     val method = methods[methodName] ?: return RPCResponse(
@@ -56,46 +108,31 @@ private fun deserializeRPCRequestAndExecute(user: SimpleTypedObject?, tree: Json
             parameters[argument.key] = argument.type.parse(value)
         }
     }
+    if (parameters.size != method.arguments.size) {
+        val missing = method.arguments.asSequence()
+                .map { it.key }
+                .toSet()
+                .subtract(parameters.keys)
+                .joinToString { "'$it'" }
+        return RPCResponse(
+                id = id,
+                error = RPCError(
+                        code = RPCError.CODE_INVALID_PARAMS,
+                        message = "Parameters $missing are missing"
+                )
+        )
+    }
 
     return try {
-        val result = method.invoke(user, parameters)
+        val result = method.invoke(transaction, parameters)
         RPCResponse(
                 id,
-                result = (method.returns.type as SType<Any>).serialize(JsonGlobals.jsonNodeFactory, result)
+                result = (method.returns.type as SType<Any?>).serialize(JsonGlobals.jsonNodeFactory, result)
         )
     } catch (e: RPCException) {
         RPCResponse(
                 id,
                 error = e.rpcError
         )
-    }
-}
-
-fun Route.rpc(methods: Map<String, RPCMethod>, userGetter: (ApplicationCall) -> SimpleTypedObject? = { null }) {
-    post() {
-        exceptionWrap {
-            val user = userGetter(it)
-            try {
-                val node = it.request.receiveJson<JsonNode>()!!
-                if (node.isObject) {
-                    val result = deserializeRPCRequestAndExecute(user, node, methods)
-                    it.respondJson(result, if (result.error == null) HttpStatusCode.OK else HttpStatusCode.BadRequest)
-                } else {
-                    val results = node.elements().asSequence()
-                            .map { deserializeRPCRequestAndExecute(user, it, methods) }
-                            .toList()
-                    it.respondJson(results)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                it.respondJson(RPCResponse(
-                        id = 0,
-                        error = RPCError(
-                                RPCError.CODE_PARSE_ERROR,
-                                e.message ?: "Unknown parsing exception"
-                        )
-                ))
-            }
-        }
     }
 }

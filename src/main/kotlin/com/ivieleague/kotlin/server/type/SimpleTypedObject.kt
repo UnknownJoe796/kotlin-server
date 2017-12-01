@@ -5,24 +5,26 @@ import com.fasterxml.jackson.core.JsonGenerator
 interface TypedObject {
     val type: SClass
 
-    operator fun <T : Any> get(field: SClass.Field<T>): T?
+    operator fun <T> get(field: TypeField<T>): T
 
     fun serialize(generator: JsonGenerator) = type.serialize(generator, this)
 }
 
 interface MutableTypedObject : TypedObject {
-    operator fun <T : Any> set(field: SClass.Field<T>, value: T?)
+    operator fun <T> set(field: TypeField<T>, value: T)
 }
 
 class SimpleTypedObject(override val type: SClass) : HashMap<String, Any?>(), MutableTypedObject {
 
     @Suppress("UNCHECKED_CAST")
-    override operator fun <T : Any> get(field: SClass.Field<T>): T? {
-        return this[field.key] as T
+    override operator fun <T> get(field: TypeField<T>): T {
+        if(this.containsKey(field.key)) {
+            return this[field.key] as T
+        } else return field.default
     }
 
     @Suppress("UNCHECKED_CAST")
-    override operator fun <T : Any> set(field: SClass.Field<T>, value: T?) {
+    override operator fun <T> set(field: TypeField<T>, value: T) {
         this[field.key] = value
     }
 }

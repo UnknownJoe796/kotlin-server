@@ -7,15 +7,13 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
-class SList<T : Any> private constructor(val ofType: SType<T>) : SType<List<T?>> {
+class SList<T> private constructor(val ofType: SType<T>) : SType<List<T>> {
     override val kclass = List::class
 
-    override fun parse(parser: JsonParser): List<T?>? {
-        if (parser.currentToken == JsonToken.VALUE_NULL) return null
-
+    override fun parse(parser: JsonParser): List<T> {
         assert(parser.currentToken == JsonToken.START_ARRAY)
 
-        val result = ArrayList<T?>()
+        val result = ArrayList<T>()
         var token = parser.nextValue()
         while (token != JsonToken.END_ARRAY) {
             result += ofType.parse(parser)
@@ -24,40 +22,33 @@ class SList<T : Any> private constructor(val ofType: SType<T>) : SType<List<T?>>
         return result
     }
 
-    override fun parse(node: JsonNode): List<T?>? {
-        if (node.isNull) return null
+    override fun parse(node: JsonNode?): List<T> {
+        if (node == null) return default
 
-        val result = ArrayList<T?>()
+        val result = ArrayList<T>()
         for (value in node.elements()) {
             result += ofType.parse(value)
         }
         return result
     }
 
-    override fun serialize(generator: JsonGenerator, value: List<T?>?) = generator.writeNullOr(value) {
-        writeStartArray()
-        for (item in it) {
-            if (item == null)
-                writeNull()
-            else {
+    override fun serialize(generator: JsonGenerator, value: List<T>) {
+        generator.apply {
+            writeStartArray()
+            for (item in value) {
                 ofType.serialize(generator, item)
             }
+            writeEndArray()
         }
-        writeEndArray()
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun serialize(factory: JsonNodeFactory, value: List<T?>?) = factory.nullNodeOr(value) {
-        arrayNode().apply {
-            for (item in it) {
-                if (item == null)
-                    add(nullNode())
-                else {
-                    add(ofType.serialize(factory, item as? T))
-                }
-            }
+    override fun serialize(factory: JsonNodeFactory, value: List<T>) = factory.arrayNode().apply {
+        for (item in value) {
+            add(ofType.serialize(factory, item))
         }
     }
+
 
     override val name: String = "List<${ofType.name}>"
     override val description: String = "A list of ${ofType.name}."
@@ -66,9 +57,11 @@ class SList<T : Any> private constructor(val ofType: SType<T>) : SType<List<T?>>
         get() = listOf(ofType)
 
     override fun reflect(): TypedObject = SPrimitiveClass.make(this)
+    override val default: List<T>
+        get() = listOf()
 
     companion object {
         private val cache = HashMap<SType<*>, SList<*>>()
-        operator fun <T : Any> get(type: SType<T>) = cache.getOrPut(type) { SList(type) } as SList<T>
+        operator fun <T> get(type: SType<T>) = cache.getOrPut(type) { SList(type) } as SList<T>
     }
 }

@@ -9,40 +9,34 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.ivieleague.kotlin.server.JsonGlobals
 import com.ivieleague.kotlin.server.type.meta.SClassClass
 
-interface SClass : SType<TypedObject> {
+interface SClass : SHasFields<TypedObject> {
     override val name: String
     override val description: String
-    val fields: Map<String, Field<*>>
-    val primaryKey: List<Field<*>> get() = listOf()
+    val primaryKey: List<TypeField<*>> get() = listOf()
+    override val default: TypedObject get() = SimpleTypedObject(this)
 
     override val dependencies: Collection<SType<*>>
         get() = fields.map { it.value.type }
 
     override val kclass get() = Map::class
 
-    override fun parse(node: JsonNode): TypedObject? = parseDirect(JsonGlobals.jsonNodeFactory, node)
-    fun parseSimple(node: JsonNode): SimpleTypedObject? {
-        if (node.isNull) return null
+    override fun parse(node: JsonNode?): TypedObject = if (node == null || node.isNull) throw IllegalArgumentException("Node '$node' cannot be parsed into an instance of $name.")
+    else parseDirect(JsonGlobals.jsonNodeFactory, node)
+
+    fun parseSimple(node: JsonNode): SimpleTypedObject {
         val result = SimpleTypedObject(this)
-        for ((key, value) in node.fields()) {
-            val field = fields[key]
-            if (field == null) {
-                result[key] = SPrimitives.getDefault(value).parse(value)
-            } else {
-                result[key] = field.type.parse(value)
-            }
+        for ((key, field) in fields) {
+            val value: JsonNode? = node.get(key)
+            result[key] = field.type.parse(value)
         }
         return result
     }
 
-    fun parseDirect(factory: JsonNodeFactory, node: JsonNode): JsonTypedObject? {
-        return if (node.isNull) null
-        else JsonTypedObject(this, factory, node as ObjectNode)
+    fun parseDirect(factory: JsonNodeFactory, node: JsonNode): JsonTypedObject {
+        return JsonTypedObject(this, factory, node as ObjectNode)
     }
 
-    override fun parse(parser: JsonParser): TypedObject? {
-        if (parser.currentToken == JsonToken.VALUE_NULL) return null
-
+    override fun parse(parser: JsonParser): TypedObject {
         assert(parser.currentToken == JsonToken.START_OBJECT)
 
         val result = SimpleTypedObject(this)
@@ -61,44 +55,39 @@ interface SClass : SType<TypedObject> {
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun serialize(generator: JsonGenerator, value: TypedObject?) = generator.writeNullOr(value) {
-        writeStartObject()
-        for ((key, field) in fields) {
-            writeFieldName(key)
+    override fun serialize(generator: JsonGenerator, value: TypedObject) {
+        generator.apply {
+            writeStartObject()
+            for ((key, field) in fields) {
+                writeFieldName(key)
 
-            val item: Any? = it[field]
-            if (item == null)
-                writeNull()
-            else {
-                (field.type as SType<Any>).serialize(generator, item)
+                val item: Any? = value[field]
+                if (item == null)
+                    writeNull()
+                else {
+                    (field.type as SType<Any>).serialize(generator, item)
+                }
             }
+            writeEndObject()
         }
-        writeEndObject()
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun serialize(factory: JsonNodeFactory, value: TypedObject?): JsonNode {
+    override fun serialize(factory: JsonNodeFactory, value: TypedObject): JsonNode {
         return if (value is JsonTypedObject) value.source
-        else factory.nullNodeOr(value) {
-            objectNode().apply {
-                for ((key, field) in fields) {
-                    val item = it[field]
-                    if (item == null)
-                        set(key, nullNode())
-                    else {
-                        set(key, (field.type as SType<Any>).serialize(factory, item))
-                    }
+        else factory.objectNode().apply {
+            for ((key, field) in fields) {
+                val item = value[field]
+                if (item == null)
+                    set(key, nullNode())
+                else {
+                    set(key, (field.type as SType<Any>).serialize(factory, item))
                 }
             }
+
         }
     }
 
-    data class Field<T : Any>(
-            val key: String,
-            val description: String,
-            val type: SType<T>,
-            val default: T? = null
-    )
 
     override fun reflect(): TypedObject = SClassClass.make(this)
 }

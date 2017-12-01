@@ -3,43 +3,41 @@ package com.ivieleague.kotlin.server.type.meta
 import com.ivieleague.kotlin.server.type.SClass
 import com.ivieleague.kotlin.server.type.SString
 import com.ivieleague.kotlin.server.type.SimpleTypedObject
+import com.ivieleague.kotlin.server.type.TypeField
 
 object SField : SClass {
     override val name: String = "Field"
     override val description: String = "A field of a class or interface."
 
-    val fieldName = SClass.Field(
+    val fieldName = TypeField(
             key = "name",
             description = "The name of the field.",
-            type = SString,
-            default = null
+            type = SString
     )
-    val fieldDescription = SClass.Field(
+    val fieldDescription = TypeField(
             key = "description",
             description = "A description of the field.",
-            type = SString,
-            default = null
+            type = SString
     )
-    val fieldType = SClass.Field(
+    val fieldType = TypeField(
             key = "type",
             description = "The type of the field.",
-            type = SString,
-            default = null
+            type = SString
     )
-//    val fieldDefault = SClass.Field(
+//    val fieldDefault = TypeField(
 //            key = "default",
 //            description = "The default of the field.",
 //            type = ,
 //            default = null
 //    )
 
-    override val fields: Map<String, SClass.Field<*>> = listOf<SClass.Field<*>>(
+    override val fields: Map<String, TypeField<*>> = listOf<TypeField<*>>(
             fieldName,
             fieldDescription,
             fieldType
     ).associate { it.key to it }
 
-    fun make(field: SClass.Field<*>) = SimpleTypedObject(this).apply {
+    fun make(field: TypeField<*>) = SimpleTypedObject(this).apply {
         this[fieldName] = field.key
         this[fieldDescription] = field.description
         this[fieldType] = field.type.name
