@@ -1,5 +1,7 @@
 package com.ivieleague.kotlin.server.rpc
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.ivieleague.kotlin.server.type.Exists
 import com.ivieleague.kotlin.server.type.SType
 
 
@@ -13,8 +15,11 @@ interface RPCMethod {
     data class Argument<T>(
             val key: String,
             val description: String,
-            val type: SType<T>
-    )
+            val type: SType<T>,
+            val default: Exists<T> = Exists()
+    ) {
+        fun parse(node: JsonNode?) = if (default.exists) type.parse(node/*, default.value*/) else type.parse(node)
+    }
 
     data class Returns<T>(
             val description: String,

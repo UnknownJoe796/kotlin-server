@@ -60,17 +60,30 @@ object SRPCMethod : SClass {
                 description = "The name of the type of the argument.",
                 type = SString
         )
+        val argDefault = TypeField(
+                key = "default",
+                description = "The default value of the argument.",
+                type = SPartial[STypedValue]
+        )
 
         override val fields: Map<String, TypeField<*>> = listOf<TypeField<*>>(
                 argKey,
                 argDescription,
-                argType
+                argType,
+                argDefault
         ).associate { it.key to it }
 
         fun make(item: RPCMethod.Argument<*>): SimpleTypedObject = SimpleTypedObject(Argument).apply {
             this[argKey] = item.key
             this[argDescription] = item.description
             this[argType] = item.type.name
+            val defaultValue: Exists<TypedValue<*>> = item.default.let {
+                if (it.exists)
+                    Exists(TypedValue(item.type as SType<Any?>, it.value))
+                else
+                    Exists()
+            }
+            this[argDefault] = defaultValue
         }
     }
 

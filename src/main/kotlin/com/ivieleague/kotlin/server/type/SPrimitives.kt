@@ -13,7 +13,9 @@ object SPrimitives {
             SFloat,
             SDouble,
             SString,
-            SDate
+            SDate,
+            SJson,
+            STypedValue
     )
 
     private val mapped = types.associate { it.jclass to it }
