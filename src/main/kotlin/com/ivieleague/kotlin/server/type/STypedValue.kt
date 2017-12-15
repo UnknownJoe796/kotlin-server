@@ -11,7 +11,7 @@ object STypedValue : SType<TypedValue<*>> {
         val typeName = node!!["type"].asText()
         val valueNode = node["value"]
         @Suppress("UNCHECKED_CAST")
-        val type = types[typeName] as SType<Any>
+        val type = CentralTypeRegistry[typeName] as SType<Any>
         return TypedValue(type, type.parse(node))
     }
 
@@ -22,13 +22,12 @@ object STypedValue : SType<TypedValue<*>> {
     override fun reflect(): TypedObject = SPrimitiveClass.make(this)
     override val default: TypedValue<*> = TypedValue(SVoid, Unit)
 
-    val types = HashMap<String, SType<*>>()
 }
 
 data class TypedValue<T>(val type: SType<T>, val value: T) {
     //TODO Registry based on any's that are created.  This should change.
     init {
-        STypedValue.types[type.name] = type
+        CentralTypeRegistry[type.name] = type
     }
 
     fun serialize(generator: JsonGenerator) {
