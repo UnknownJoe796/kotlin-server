@@ -10,6 +10,8 @@ object SVoid : SType<Unit> {
     override val kclass = Unit::class
     override fun parse(parser: JsonParser) = Unit
     override fun parse(node: JsonNode?) = Unit
+    override fun parse(node: JsonNode?, default: Unit) = Unit
+    override fun parse(parser: JsonParser, default: Unit) = Unit
     override fun serialize(generator: JsonGenerator, value: Unit) = generator.writeNull()
     override fun serialize(factory: JsonNodeFactory, value: Unit): JsonNode = factory.nullNode()
     override val name: String = "Void"

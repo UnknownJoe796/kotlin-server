@@ -71,41 +71,44 @@ class EntityTypedObject(
     override fun <T> get(field: TypeField<T>): T {
         if (field == idField)
             return entity.id.toString() as T
-        val type = field.type
-        return convertFromXodus<T>(field.type, entity.getProperty(field.key))
+        val raw = entity.getProperty(field.key)
+        return if (raw == null) field.default
+        else convertFromXodus<T>(field.type, raw)
     }
 
     @Suppress("IMPLICIT_CAST_TO_ANY", "UNCHECKED_CAST")
     override operator fun <T> set(field: TypeField<T>, value: T) {
         val type = field.type
         val write = convertToXodus(type, value)
-        if (write != null) {
-            entity.setPropertyNullable(field.key, write)
-        }
+        entity.setProperty(field.key, write)
     }
 
     companion object {
+
+        const val NO_NODE = "NO_NODE"
+
         @Suppress("IMPLICIT_CAST_TO_ANY")
-        fun <T> convertFromXodus(type: SType<T>, value: Comparable<*>?): T {
+        fun <T> convertFromXodus(type: SType<T>, value: Comparable<*>): T {
             return when (type) {
                 SBoolean, SDouble, SFloat, SInt, SLong, SString, is SPointer<*> -> value
                 SVoid -> Unit
-                SDate -> (value as? String)?.let { SDate.format.parse(it) }
-                is SEnum -> (value as? String)?.let { type[it] }
-                else -> value?.let { deferReadToJson(type, it as String) }
+                SDate -> (value as String).let { SDate.format.parse(it) }
+                is SEnum -> (value as String).let { type[it] }
+                else -> value.let { deferReadToJson(type, it as String) }
             } as T
         }
 
         private fun <T> deferReadToJson(type: SType<T>, value: String): T =
-                type.parse(JsonGlobals.JsonObjectMapper.readTree(value))
+                if (value == NO_NODE) null as T
+                else type.parse(JsonGlobals.JsonObjectMapper.readTree(value))
 
-        fun <T> convertToXodus(type: SType<T>, value: T): Comparable<*>? {
+        fun <T> convertToXodus(type: SType<T>, value: T): Comparable<*> {
             return when (type) {
                 SBoolean, SDouble, SFloat, SInt, SLong, SString, is SPointer<*> -> value as Comparable<*>
-                SVoid -> null
-                SDate -> (value as? ZonedDateTime)?.let { SDate.format.format(it) }
-                is SEnum -> (value as? SEnum.Value)?.name
-                else -> deferWriteToJson(type, value)?.toString()
+                SVoid -> "VOID"
+                SDate -> (value as ZonedDateTime).let { SDate.format.format(it) }
+                is SEnum -> (value as SEnum.Value).name
+                else -> deferWriteToJson(type, value)?.toString() ?: NO_NODE
             }
         }
 

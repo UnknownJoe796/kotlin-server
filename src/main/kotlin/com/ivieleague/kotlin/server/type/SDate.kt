@@ -7,12 +7,25 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
 
 object SDate : SType<ZonedDateTime> {
     val format = java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME
+    val parseFormat = DateTimeFormatterBuilder()
+            // date/time
+            .append(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            // offset (hh:mm - "+00:00" when it's zero)
+            .optionalStart().appendOffset("+HH:MM", "+00:00").optionalEnd()
+            // offset (hhmm - "+0000" when it's zero)
+            .optionalStart().appendOffset("+HHMM", "+0000").optionalEnd()
+            // offset (hh - "Z" when it's zero)
+            .optionalStart().appendOffset("+HH", "Z").optionalEnd()
+            // create formatter
+            .toFormatter()
     override val kclass = ZonedDateTime::class
-    override fun parse(parser: JsonParser) = format.parse(parser.text, ZonedDateTime::from)
-    override fun parse(node: JsonNode?) = if (node == null) default else format.parse(node.asText(), ZonedDateTime::from)
+    override fun parse(parser: JsonParser) = parseFormat.parse(parser.text, ZonedDateTime::from)
+    override fun parse(node: JsonNode?) = if (node == null) default else parseFormat.parse(node.asText(), ZonedDateTime::from)
     override fun serialize(generator: JsonGenerator, value: ZonedDateTime) = generator.writeNullOr(value) {
         writeString(format.format(it))
     }

@@ -23,6 +23,9 @@ interface SEnum : SType<SEnum.Value?> {
     override fun parse(parser: JsonParser) = if (parser.currentToken == JsonToken.VALUE_NULL) null else get(parser.text)
     override fun parse(node: JsonNode?): SEnum.Value? = if (node == null) null else if (node.isNull) null else get(node.asText())
 
+    override fun parse(parser: JsonParser, default: SEnum.Value?) = if (parser.currentToken == JsonToken.VALUE_NULL) default else get(parser.text) ?: default
+    override fun parse(node: JsonNode?, default: SEnum.Value?): SEnum.Value? = if (node == null) default else if (node.isNull) null else get(node.asText()) ?: default
+
     override fun reflect(): TypedObject = SEnumClass.make(this)
 
     override fun serialize(generator: JsonGenerator, value: SEnum.Value?) = generator.writeNullOr(value) {

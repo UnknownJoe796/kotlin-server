@@ -20,6 +20,13 @@ interface SInterface : SHasFields<TypedObject> {
         return sclass.parse(node)
     }
 
+    override fun parse(node: JsonNode?, default: TypedObject): TypedObject {
+        if (node == null) return default
+        val typeString = node.get("@type").asText()
+        val sclass = implementers[typeString] ?: throw IllegalArgumentException("Type $typeString not found as an implementer of $name")
+        return sclass.parse(node, default)
+    }
+
     @Suppress("UNCHECKED_CAST")
     override fun serialize(generator: JsonGenerator, value: TypedObject) {
         generator.apply {
