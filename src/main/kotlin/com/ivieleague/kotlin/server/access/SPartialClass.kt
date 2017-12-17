@@ -12,12 +12,12 @@ class SPartialClass private constructor(val type: SHasFields<TypedObject>) : SCl
     override val description: String
         get() = "A partial version of ${type.name}"
 
-    val mappedFields: Map<TypeField<*>, TypeField<Exists<Any?>>> = type.fields.values.associate { field ->
-        field to TypeField<Exists<Any?>>(
+    val mappedFields: Map<TypeField<*>, TypeField<Partial<Any?>>> = type.fields.values.associate { field ->
+        field to TypeField<Partial<Any?>>(
                 key = field.key,
                 description = field.description,
                 type = SPartial[field.type] as SPartial<Any?>,
-                default = Exists()
+                default = Partial()
         )
     }
 
@@ -27,7 +27,7 @@ class SPartialClass private constructor(val type: SHasFields<TypedObject>) : SCl
     fun pullFromPartial(into: MutableTypedObject, fromPartial: TypedObject) {
         for (field in this.type.fields.values) {
             val untypedField = field as TypeField<Any?>
-            val untypedPartialField = mappedFields[untypedField] as TypeField<Exists<Any?>>
+            val untypedPartialField = mappedFields[untypedField] as TypeField<Partial<Any?>>
             val exists = fromPartial[untypedPartialField]
             if(exists.exists) {
                 into[untypedField] = exists.value

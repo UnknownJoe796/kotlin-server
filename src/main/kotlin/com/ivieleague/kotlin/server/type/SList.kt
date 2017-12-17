@@ -32,6 +32,34 @@ class SList<T> private constructor(val ofType: SType<T>) : SType<List<T>> {
         return result
     }
 
+    override fun parse(parser: JsonParser, default: List<T>): List<T> {
+        assert(parser.currentToken == JsonToken.START_ARRAY)
+
+        val result = ArrayList<T>()
+        var token = parser.nextValue()
+        while (token != JsonToken.END_ARRAY) {
+            try {
+                result += ofType.parse(parser)
+            } catch (e: Exception) {/*squish*/
+            }
+            token = parser.nextValue()
+        }
+        return result
+    }
+
+    override fun parse(node: JsonNode?, default: List<T>): List<T> {
+        if (node == null) return default
+
+        val result = ArrayList<T>()
+        for (value in node.elements()) {
+            try {
+                result += ofType.parse(value)
+            } catch (e: Exception) {/*squish*/
+            }
+        }
+        return result
+    }
+
     override fun serialize(generator: JsonGenerator, value: List<T>) {
         generator.apply {
             writeStartArray()

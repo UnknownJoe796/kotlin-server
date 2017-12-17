@@ -21,6 +21,19 @@ class SNullable<T> private constructor(val ofType: SType<T>) : SType<T?> {
         return ofType.parse(node)
     }
 
+    override fun parse(parser: JsonParser, default: T?): T? {
+        if (parser.currentToken == JsonToken.VALUE_NULL) return null
+        return ofType.parse(parser)
+    }
+
+    override fun parse(node: JsonNode?, default: T?): T? {
+        if (node == null) return default
+        if (node.isNull) return null
+        return ofType.parse(node)
+    }
+
+
+
     override fun serialize(generator: JsonGenerator, value: T?) = generator.writeNullOr(value) {
         ofType.serialize(generator, it)
     }

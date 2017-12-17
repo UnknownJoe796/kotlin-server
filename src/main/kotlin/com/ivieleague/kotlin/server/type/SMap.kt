@@ -33,6 +33,37 @@ class SMap<T> private constructor(val ofType: SType<T>) : SType<Map<String, T>> 
         return result
     }
 
+    override fun parse(parser: JsonParser, default: Map<String, T>): Map<String, T> {
+
+        assert(parser.currentToken == JsonToken.START_OBJECT)
+
+        val result = HashMap<String, T>()
+        var token = parser.nextValue()
+        while (token != JsonToken.END_OBJECT) {
+            try {
+                result[parser.currentName] = ofType.parse(parser)
+            } catch (e: Exception) {
+
+            }
+            token = parser.nextValue()
+        }
+        return result
+    }
+
+    override fun parse(node: JsonNode?, default: Map<String, T>): Map<String, T> {
+        if (node == null) return default
+
+        val result = HashMap<String, T>()
+        for ((key, value) in node.fields()) {
+            try {
+                result[key] = ofType.parse(value)
+            } catch (e: Exception) {
+
+            }
+        }
+        return result
+    }
+
     override fun serialize(generator: JsonGenerator, value: Map<String, T>) = generator.writeNullOr(value) {
         writeStartObject()
         for ((key, item) in it) {

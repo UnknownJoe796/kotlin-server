@@ -5,30 +5,30 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
-class SPartial<T>(val ofType: SType<T>) : SType<Exists<T>> {
-    override val kclass = Exists::class
+class SPartial<T>(val ofType: SType<T>) : SType<Partial<T>> {
+    override val kclass = Partial::class
     override val name: String = "Partial<${ofType.name}>"
     override val description: String = "A value of type ${ofType.name} which may or may not exist."
 
     override fun reflect(): TypedObject = SPrimitiveClass.make(this)
 
-    override fun parse(node: JsonNode?): Exists<T> {
-        if (node == null) return Exists()
-        return Exists(ofType.parse(node))
+    override fun parse(node: JsonNode?): Partial<T> {
+        if (node == null) return Partial()
+        else if (node.isTextual && node.textValue() == Partial.NO_VALUE) return Partial()
+        return Partial(ofType.parse(node))
     }
 
-    override fun serialize(generator: JsonGenerator, value: Exists<T>) {
-        val subvalue = value.value
-        if (subvalue != null)
-            ofType.serialize(generator, subvalue)
+    override fun serialize(generator: JsonGenerator, value: Partial<T>) {
+        if (!value.exists) generator.writeString(Partial.NO_VALUE)
+        else ofType.serialize(generator, value.value as T)
     }
 
-    override fun serialize(factory: JsonNodeFactory, value: Exists<T>): JsonNode? {
-        val subvalue = value.value
-        if (subvalue == null) return null
-        else return ofType.serialize(factory, subvalue)
+    override fun serialize(factory: JsonNodeFactory, value: Partial<T>): JsonNode? {
+        return if (!value.exists) factory.textNode(Partial.NO_VALUE)
+        else ofType.serialize(factory, value.value as T)
     }
-    override val default: Exists<T> = Exists()
+
+    override val default: Partial<T> = Partial()
 
     companion object {
         private val cache = HashMap<SType<*>, SPartial<*>>()
@@ -36,7 +36,7 @@ class SPartial<T>(val ofType: SType<T>) : SType<Exists<T>> {
     }
 }
 
-class Exists<T>(
+class Partial<T>(
         var value: T? = null,
         var exists:Boolean = value != null
 ){
@@ -49,5 +49,9 @@ class Exists<T>(
         return if(exists){
             ifNotNull.invoke(value as T)
         } else otherwise.invoke()
+    }
+
+    companion object {
+        const val NO_VALUE = "\u0000"
     }
 }

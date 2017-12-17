@@ -58,7 +58,7 @@ fun SClass.assertWriteSecure(transaction: Transaction, value: TypedObject) {
 fun SClass.assertPartialWriteSecure(transaction: Transaction, partialWrite: TypedObject) {
     for (field in fields.values) {
         val untypedField = field as TypeField<Any?>
-        val exists = partialWrite[field] as? Exists<Any?>
+        val exists = partialWrite[field] as? Partial<Any?>
         if (exists != null && untypedField.writeSecurityRule?.invoke(transaction.user, exists.value) == false) {
             throw SecurityPotentialExceptions.writeFieldViolation.exception()
         }

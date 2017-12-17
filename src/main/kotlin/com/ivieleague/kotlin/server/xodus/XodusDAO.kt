@@ -56,8 +56,9 @@ class XodusDAO(val store: PersistentEntityStore, override val type: SClass) : Mo
                 null
             }
             conditionType.any -> {
-                condition[conditionType.fieldConditions]!!
-                        .map { conditionToIterable(txn, it) }
+                val sublist = condition[conditionType.fieldConditions]
+                if (sublist.isEmpty()) txn.getAll(type.name)
+                else sublist.map { conditionToIterable(txn, it) }
                         .reduce { first, second ->
                             if (first == null) second
                             else if (second == null) first
@@ -65,8 +66,9 @@ class XodusDAO(val store: PersistentEntityStore, override val type: SClass) : Mo
                         }
             }
             conditionType.all -> {
-                condition[conditionType.fieldConditions]!!
-                        .map { conditionToIterable(txn, it) }
+                val sublist = condition[conditionType.fieldConditions]
+                if (sublist.isEmpty()) txn.getAll(type.name)
+                else sublist.map { conditionToIterable(txn, it) }
                         .reduce { first, second ->
                             if (first == null || second == null) null
                             else first.intersect(second)
@@ -75,7 +77,7 @@ class XodusDAO(val store: PersistentEntityStore, override val type: SClass) : Mo
             conditionType.equal -> {
                 val value = condition[conditionType.fieldValue]
                 type.fields.values.mapNotNull { field ->
-                    val subvalueExists = value[SPartialClass[type].mappedFields[field]!!] as Exists<*>
+                    val subvalueExists = value[SPartialClass[type].mappedFields[field]!!] as Partial<*>
                     subvalueExists.letNotNull(
                             ifNotNull = {
                                 val subvalue = EntityTypedObject.convertToXodus(field.type as SType<Any?>, it)
