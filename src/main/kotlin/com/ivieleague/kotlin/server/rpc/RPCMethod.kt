@@ -1,7 +1,7 @@
 package com.ivieleague.kotlin.server.rpc
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.ivieleague.kotlin.server.type.Exists
+import com.ivieleague.kotlin.server.type.Partial
 import com.ivieleague.kotlin.server.type.SType
 
 
@@ -16,7 +16,7 @@ interface RPCMethod {
             val key: String,
             val description: String,
             val type: SType<T>,
-            val default: Exists<T> = Exists()
+            val default: Partial<T> = Partial()
     ) {
         fun parse(node: JsonNode?) = if (default.exists) type.parse(node/*, default.value*/) else type.parse(node)
     }

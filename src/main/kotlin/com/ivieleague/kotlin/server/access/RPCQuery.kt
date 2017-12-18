@@ -14,25 +14,29 @@ class RPCQuery<T>(val dao: QueryableDAO<T>) : RPCMethod {
 
     val sortType = SSort[dao.type as SClass]
 
-    val argumentCondition = RPCMethod.Argument(
+    val argumentCondition = RPCMethod.Argument<TypedObject>(
             key = "condition",
             description = "The condition to query for.",
-            type = SCondition[dao.type as SClass]
+            type = SCondition[dao.type as SClass],
+            default = Partial(SimpleTypedObject(SCondition[dao.type as SClass].always))
     )
     val argumentSort = RPCMethod.Argument(
             key = "sort",
             description = "The sort to query for.",
-            type = SList[sortType]
+            type = SList[sortType],
+            default = Partial(listOf())
     )
     val argumentCount = RPCMethod.Argument(
             key = "count",
             description = "The count to query for.",
-            type = SInt
+            type = SInt,
+            default = Partial(100)
     )
-    val argumentStart = RPCMethod.Argument(
+    val argumentStart = RPCMethod.Argument<T?>(
             key = "start",
             description = "The start to query for.",
-            type = SNullable[dao.type]
+            type = SNullable[dao.type],
+            default = Partial(null)
     )
 
     override val arguments = listOf(

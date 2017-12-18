@@ -46,6 +46,14 @@ class XodusDAO(val store: PersistentEntityStore, override val type: SClass) : Mo
         txn.getTypedObjectOrNull(type, pointer)?.entity?.delete()
     }
 
+    fun entityIterator(transaction: Transaction): Iterator<EntityTypedObject> = object : Iterator<EntityTypedObject> {
+        val txn = transaction.getXodus(store)
+        val wraps = txn.getAll(type.name).iterator()
+
+        override fun hasNext(): Boolean = wraps.hasNext()
+        override fun next(): EntityTypedObject = wraps.next().toTypedObject(type, txn)
+    }
+
     val conditionType = SCondition[type]
     fun conditionToIterable(txn: StoreTransaction, condition: TypedObject): EntityIterable? {
         return when (condition.type) {
@@ -81,15 +89,11 @@ class XodusDAO(val store: PersistentEntityStore, override val type: SClass) : Mo
                     subvalueExists.letNotNull(
                             ifNotNull = {
                                 val subvalue = EntityTypedObject.convertToXodus(field.type as SType<Any?>, it)
-                                if (subvalue == null) {
-                                    txn.getAll(type.name).minus(txn.findWithProp(type.name, field.key))
-                                } else {
-                                    txn.find(
-                                            type.name,
-                                            field.key,
-                                            subvalue
-                                    )
-                                }
+                                txn.find(
+                                        type.name,
+                                        field.key,
+                                        subvalue
+                                )
                             },
                             otherwise = { null }
                     )

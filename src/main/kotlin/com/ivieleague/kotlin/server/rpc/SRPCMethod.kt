@@ -77,11 +77,11 @@ object SRPCMethod : SClass {
             this[argKey] = item.key
             this[argDescription] = item.description
             this[argType] = item.type.name
-            val defaultValue: Exists<TypedValue<*>> = item.default.let {
+            val defaultValue: Partial<TypedValue<*>> = item.default.let {
                 if (it.exists)
-                    Exists(TypedValue(item.type as SType<Any?>, it.value))
+                    Partial(TypedValue(item.type as SType<Any?>, it.value))
                 else
-                    Exists()
+                    Partial()
             }
             this[argDefault] = defaultValue
         }

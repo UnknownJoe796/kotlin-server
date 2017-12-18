@@ -37,9 +37,12 @@ class SPartial<T>(val ofType: SType<T>) : SType<Partial<T>> {
 }
 
 class Partial<T>(
-        var value: T? = null,
-        var exists:Boolean = value != null
-){
+        var value: T?,
+        var exists: Boolean
+) {
+    constructor() : this(null, false)
+    constructor(value: T) : this(value, true)
+
     inline fun letNotNull( ifNotNull:(T)->Unit){
         if(exists){
             ifNotNull.invoke(value as T)

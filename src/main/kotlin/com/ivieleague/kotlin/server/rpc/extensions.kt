@@ -76,7 +76,7 @@ private fun deserializeRPCRequestAndExecute(transaction: Transaction, tree: Json
             )
     )
 
-    val parameters = HashMap<String, Any?>()
+    val parameters = HashMap<String, Any?>(method.arguments.associate { it.key to it.default.value })
     val parametersNode = tree.get("params") ?: return RPCResponse(
             id = id,
             error = RPCError(
@@ -113,14 +113,16 @@ private fun deserializeRPCRequestAndExecute(transaction: Transaction, tree: Json
                 .map { it.key }
                 .toSet()
                 .subtract(parameters.keys)
-                .joinToString { "'$it'" }
-        return RPCResponse(
-                id = id,
-                error = RPCError(
-                        code = RPCError.CODE_INVALID_PARAMS,
-                        message = "Parameters $missing are missing"
-                )
-        )
+
+        if (missing.isNotEmpty()) {
+            return RPCResponse(
+                    id = id,
+                    error = RPCError(
+                            code = RPCError.CODE_INVALID_PARAMS,
+                            message = "Parameters ${missing.joinToString()} are missing"
+                    )
+            )
+        }
     }
 
     return try {
