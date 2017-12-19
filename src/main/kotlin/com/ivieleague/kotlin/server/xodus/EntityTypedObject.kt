@@ -92,7 +92,12 @@ class EntityTypedObject(
             return when (type) {
                 SBoolean, SDouble, SFloat, SInt, SLong, SString, is SPointer<*> -> value
                 SVoid -> Unit
-                SDate -> (value as String).let { SDate.format.parse(it) }
+                SDate -> try {
+                    (value as String).let { SDate.format().parse(it, ZonedDateTime::from) }
+                } catch (e: Exception) {
+                    println("value: $value")
+                    throw e
+                }
                 is SEnum -> (value as String).let { type[it] }
                 else -> value.let { deferReadToJson(type, it as String) }
             } as T
@@ -106,7 +111,7 @@ class EntityTypedObject(
             return when (type) {
                 SBoolean, SDouble, SFloat, SInt, SLong, SString, is SPointer<*> -> value as Comparable<*>
                 SVoid -> "VOID"
-                SDate -> (value as ZonedDateTime).let { SDate.format.format(it) }
+                SDate -> (value as ZonedDateTime).let { SDate.format().format(it) }
                 is SEnum -> (value as SEnum.Value).name
                 else -> deferWriteToJson(type, value)?.toString() ?: NO_NODE
             }
