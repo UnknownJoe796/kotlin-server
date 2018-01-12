@@ -2,57 +2,50 @@ package com.ivieleague.kotlin.server.rpc
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.ivieleague.kotlin.server.JsonGlobals
-import com.ivieleague.kotlin.server.exceptionWrap
-import com.ivieleague.kotlin.server.receiveJson2
-import com.ivieleague.kotlin.server.respondJson
+import com.ivieleague.kotlin.server.getContentJson
+import com.ivieleague.kotlin.server.handler
+import com.ivieleague.kotlin.server.respond
 import com.ivieleague.kotlin.server.type.SType
 import com.ivieleague.kotlin.server.type.TypedObject
-import io.ktor.application.ApplicationCall
-import io.ktor.http.HttpStatusCode
-import io.ktor.routing.Route
-import io.ktor.routing.post
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
 
-fun Route.rpc(
+fun rpc(
         methods: Map<String, RPCMethod>,
-        userGetter: (ApplicationCall) -> TypedObject? = { null },
-        onCompute: (TypedObject?, JsonNode?, RPCResponse) -> Unit = { _, _, _ -> }
-) {
-    post() {
-        exceptionWrap {
-            val user = userGetter(it)
-            try {
-                val node = it.request.receiveJson2<JsonNode>()!!
-                if (node.isObject) {
-                    val result = Transaction(user).use { txn ->
-                        deserializeRPCRequestAndExecute(txn, node, methods)
-                    }
-                    onCompute.invoke(user, node, result)
-                    it.respondJson(result, if (result.error == null) HttpStatusCode.OK else HttpStatusCode.BadRequest)
-
-                } else {
-                    val results = Transaction(user).use { txn ->
-                        node.elements().asSequence()
-                                .map { deserializeRPCRequestAndExecute(txn, it, methods) }
-                                .toList()
-                    }
-                    results.forEach { onCompute.invoke(user, node, it) }
-                    it.respondJson(results)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                val response = RPCResponse(
-                        id = 0,
-                        error = RPCError(
-                                RPCError.CODE_PARSE_ERROR,
-                                e.message ?: "Unknown parsing exception"
-                        )
-                )
-                onCompute.invoke(user, null, response)
-                it.respondJson(response)
+        userGetter: (HttpServletRequest) -> TypedObject? = { null }
+) = handler { target, baseRequest, request, response ->
+    val user = userGetter.invoke(request)
+    try {
+        val node = request.getContentJson()
+        if (node.isObject) {
+            val result = Transaction(user).use { txn ->
+                deserializeRPCRequestAndExecute(txn, node, methods)
             }
+            response.status = if (result.error == null) HttpServletResponse.SC_OK else HttpServletResponse.SC_BAD_REQUEST
+            response.contentType = JsonGlobals.ContentTypeApplicationJson
+            response.respond(JsonGlobals.JsonObjectMapper.writeValueAsString(result))
+
+        } else {
+            val results = Transaction(user).use { txn ->
+                node.elements().asSequence()
+                        .map { deserializeRPCRequestAndExecute(txn, it, methods) }
+                        .toList()
+            }
+            response.respond(JsonGlobals.JsonObjectMapper.writeValueAsString(results))
         }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        response.respond(JsonGlobals.JsonObjectMapper.writeValueAsString(RPCResponse(
+                id = 0,
+                error = RPCError(
+                        RPCError.CODE_PARSE_ERROR,
+                        e.message ?: "Unknown parsing exception"
+                )
+        )))
     }
+    baseRequest.isHandled = true
 }
+
 
 private fun deserializeRPCRequestAndExecute(transaction: Transaction, tree: JsonNode, methods: Map<String, RPCMethod>): RPCResponse {
     val id = try {
