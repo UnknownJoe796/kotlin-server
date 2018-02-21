@@ -28,7 +28,7 @@ interface SClass : SHasFields<TypedObject> {
         for ((key, field) in fields) {
             val value: JsonNode? = node.get(key)
             @Suppress("UNCHECKED_CAST")
-            result[key] = (field.type as SType<Any?>).parse(value, field.default)
+            result[key] = (field.type as SType<Any?>).parse(value, field.defaultGenerator())
         }
         return result
     }

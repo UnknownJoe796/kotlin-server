@@ -35,5 +35,5 @@ object SDate : SType<ZonedDateTime> {
     override val name: String = "Date"
     override val description: String = "A date/time/timezone value."
     override fun reflect(): TypedObject = SPrimitiveClass.make(this)
-    override val default: ZonedDateTime = ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault())
+    override val default: ZonedDateTime get() = ZonedDateTime.now()
 }

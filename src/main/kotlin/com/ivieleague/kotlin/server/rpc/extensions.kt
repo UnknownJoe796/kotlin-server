@@ -3,17 +3,19 @@ package com.ivieleague.kotlin.server.rpc
 import com.fasterxml.jackson.databind.JsonNode
 import com.ivieleague.kotlin.server.JsonGlobals
 import com.ivieleague.kotlin.server.getContentJson
-import com.ivieleague.kotlin.server.handler
+import com.ivieleague.kotlin.server.handler.handler
 import com.ivieleague.kotlin.server.respond
 import com.ivieleague.kotlin.server.type.SType
 import com.ivieleague.kotlin.server.type.TypedObject
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
+
 fun rpc(
         methods: Map<String, RPCMethod>,
         userGetter: (HttpServletRequest) -> TypedObject? = { null }
 ) = handler { target, baseRequest, request, response ->
+    if (target != "/rpc") return@handler
     val user = userGetter.invoke(request)
     try {
         val node = request.getContentJson()
@@ -35,6 +37,7 @@ fun rpc(
         }
     } catch (e: Exception) {
         e.printStackTrace()
+        response.status = HttpServletResponse.SC_BAD_REQUEST
         response.respond(JsonGlobals.JsonObjectMapper.writeValueAsString(RPCResponse(
                 id = 0,
                 error = RPCError(
@@ -87,7 +90,17 @@ private fun deserializeRPCRequestAndExecute(transaction: Transaction, tree: Json
                             message = "No parameter '$key' found in method '$methodName'."
                     )
             )
-            parameters[key] = argument.type.parse(value)
+            try {
+                parameters[key] = argument.type.parse(value)
+            } catch (e: Exception) {
+                return RPCResponse(
+                        id = id,
+                        error = RPCError(
+                                code = RPCError.CODE_INVALID_PARAMS,
+                                message = "Could not parse argument '${argument.key}' - expecting a ${argument.type.name}."
+                        )
+                )
+            }
         }
     } else {
         parametersNode.elements().asSequence().forEachIndexed { index, value ->
@@ -98,7 +111,17 @@ private fun deserializeRPCRequestAndExecute(transaction: Transaction, tree: Json
                             message = "Incorrect number of arguments for method '$methodName'."
                     )
             )
-            parameters[argument.key] = argument.type.parse(value)
+            try {
+                parameters[argument.key] = argument.type.parse(value)
+            } catch (e: Exception) {
+                return RPCResponse(
+                        id = id,
+                        error = RPCError(
+                                code = RPCError.CODE_INVALID_PARAMS,
+                                message = "Could not parse argument '${argument.key}' - expecting a ${argument.type.name}."
+                        )
+                )
+            }
         }
     }
     if (parameters.size != method.arguments.size) {

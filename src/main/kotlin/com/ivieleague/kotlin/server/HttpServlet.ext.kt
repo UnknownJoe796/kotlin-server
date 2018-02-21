@@ -6,23 +6,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
-fun handler(
-        onHandle: (
-                target: String,
-                baseRequest: Request,
-                request: HttpServletRequest,
-                response: HttpServletResponse
-        ) -> Unit
-) = object : AbstractHandler() {
-    override fun handle(
-            target: String,
-            baseRequest: Request,
-            request: HttpServletRequest,
-            response: HttpServletResponse
-    ) {
-        onHandle.invoke(target, baseRequest, request, response)
-    }
-}
 
 fun HttpServletRequest.getContent(): String {
     return this.reader.readText()
