@@ -1,7 +1,7 @@
 package com.ivieleague.kotlin.server.xodus
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.ivieleague.kotlin.server.JsonGlobals
+import com.ivieleague.kotlin.server.ServerJackson
 import com.ivieleague.kotlin.server.access.IdField
 import com.ivieleague.kotlin.server.type.*
 import jetbrains.exodus.entitystore.Entity
@@ -105,7 +105,7 @@ class EntityTypedObject(
 
         private fun <T> deferReadToJson(type: SType<T>, value: String): T =
                 if (value == NO_NODE) null as T
-                else type.parse(JsonGlobals.JsonObjectMapper.readTree(value))
+                else type.parse(ServerJackson.json.readTree(value))
 
         fun <T> convertToXodus(type: SType<T>, value: T): Comparable<*> {
             return when (type) {
@@ -118,6 +118,6 @@ class EntityTypedObject(
         }
 
         private fun <T> deferWriteToJson(type: SType<T>, value: T): JsonNode? =
-                type.serialize(JsonGlobals.jsonNodeFactory, value)
+                type.serialize(ServerJackson.json.nodeFactory, value)
     }
 }

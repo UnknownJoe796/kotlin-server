@@ -1,6 +1,6 @@
 package com.ivieleague.kotlin.server.singleton
 
-import com.ivieleague.kotlin.server.JsonGlobals
+import com.ivieleague.kotlin.server.ServerJackson
 import com.ivieleague.kotlin.server.generateString
 import com.ivieleague.kotlin.server.rpc.Transaction
 import com.ivieleague.kotlin.server.type.SType
@@ -17,7 +17,7 @@ class JsonFileSingletonAccess<T>(
     init {
         if (file.exists()) {
             try {
-                type.parse(JsonGlobals.JsonObjectMapper.readTree(file), default)
+                type.parse(ServerJackson.json.readTree(file), default)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -30,7 +30,7 @@ class JsonFileSingletonAccess<T>(
 
     override fun set(transaction: Transaction, value: T) {
         currentValue = value
-        file.writeText(JsonGlobals.jsonFactory.generateString {
+        file.writeText(ServerJackson.json.factory.generateString {
             type.serialize(this, value)
         })
     }

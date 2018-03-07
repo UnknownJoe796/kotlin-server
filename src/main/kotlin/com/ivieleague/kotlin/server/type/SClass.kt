@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.ivieleague.kotlin.server.JsonGlobals
+import com.ivieleague.kotlin.server.ServerJackson
 import com.ivieleague.kotlin.server.type.meta.SClassClass
 
 interface SClass : SHasFields<TypedObject> {
@@ -21,7 +21,7 @@ interface SClass : SHasFields<TypedObject> {
     override val kclass get() = Map::class
 
     override fun parse(node: JsonNode?): TypedObject = if (node == null || node.isNull) throw IllegalArgumentException("Node '$node' cannot be parsed into an instance of $name.")
-    else parseDirect(JsonGlobals.jsonNodeFactory, node)
+    else parseDirect(ServerJackson.json.nodeFactory, node)
 
     fun parseSimple(node: JsonNode): SimpleTypedObject {
         val result = SimpleTypedObject(this)

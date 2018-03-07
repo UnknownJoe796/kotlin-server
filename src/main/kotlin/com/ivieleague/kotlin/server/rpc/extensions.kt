@@ -1,53 +1,70 @@
 package com.ivieleague.kotlin.server.rpc
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.ivieleague.kotlin.server.JsonGlobals
-import com.ivieleague.kotlin.server.getContentJson
-import com.ivieleague.kotlin.server.handler
-import com.ivieleague.kotlin.server.respond
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.ivieleague.kotlin.server.bodyAsJson
+import com.ivieleague.kotlin.server.responseMapper
 import com.ivieleague.kotlin.server.type.SType
 import com.ivieleague.kotlin.server.type.TypedObject
-import javax.servlet.http.HttpServletRequest
+import spark.Request
+import spark.Response
 import javax.servlet.http.HttpServletResponse
 
 fun rpc(
         methods: Map<String, RPCMethod>,
-        userGetter: (HttpServletRequest) -> TypedObject? = { null }
-) = handler { target, baseRequest, request, response ->
+        userGetter: (Request) -> TypedObject? = { null }
+): (Request, Response) -> Any? = { request: Request, response: Response ->
+    val responseMapper = request.responseMapper()
     val user = userGetter.invoke(request)
     try {
-        val node = request.getContentJson()
+        val node = request.bodyAsJson()
         if (node.isObject) {
             val result = Transaction(user).use { txn ->
-                deserializeRPCRequestAndExecute(txn, node, methods)
+                deserializeRPCRequestAndExecute(txn, responseMapper, node, methods)
             }
-            response.status = if (result.error == null) HttpServletResponse.SC_OK else HttpServletResponse.SC_BAD_REQUEST
-            response.contentType = JsonGlobals.ContentTypeApplicationJson
-            response.respond(JsonGlobals.JsonObjectMapper.writeValueAsString(result))
+            response.status(if (result.error == null) HttpServletResponse.SC_OK else HttpServletResponse.SC_BAD_REQUEST)
+            result
 
         } else {
             val results = Transaction(user).use { txn ->
                 node.elements().asSequence()
-                        .map { deserializeRPCRequestAndExecute(txn, it, methods) }
+                        .map { deserializeRPCRequestAndExecute(txn, responseMapper, it, methods) }
                         .toList()
             }
-            response.respond(JsonGlobals.JsonObjectMapper.writeValueAsString(results))
+            results
         }
     } catch (e: Exception) {
         e.printStackTrace()
-        response.respond(JsonGlobals.JsonObjectMapper.writeValueAsString(RPCResponse(
+        RPCResponse(
                 id = 0,
                 error = RPCError(
                         RPCError.CODE_PARSE_ERROR,
                         e.message ?: "Unknown parsing exception"
                 )
-        )))
+        )
     }
-    baseRequest.isHandled = true
 }
 
+fun RPCMethod.invokeJson(
+        transaction: Transaction,
+        arguments: JsonNode
+) = invoke(transaction = transaction, arguments = arguments.let {
+    val result = HashMap<String, Any?>()
+    for ((key, value) in it.fields()) {
+        val argument = this.arguments.find { it.key == key }
+                ?: throw IllegalArgumentException("No parameter '$key' found.")
+        result[key] = argument.type.parse(value)
+    }
+    result
+})
 
-private fun deserializeRPCRequestAndExecute(transaction: Transaction, tree: JsonNode, methods: Map<String, RPCMethod>): RPCResponse {
+
+private fun deserializeRPCRequestAndExecute(
+        transaction: Transaction,
+        mapper: ObjectMapper,
+        tree: JsonNode,
+        methods: Map<String, RPCMethod>
+): RPCResponse {
     val id = try {
         tree.get("id").asInt()
     } catch (e: Exception) {
@@ -122,7 +139,7 @@ private fun deserializeRPCRequestAndExecute(transaction: Transaction, tree: Json
         val result = method.invoke(transaction, parameters)
         RPCResponse(
                 id,
-                result = (method.returns.type as SType<Any?>).serialize(JsonGlobals.jsonNodeFactory, result)
+                result = (method.returns.type as SType<Any?>).serialize(mapper.nodeFactory, result)
         )
     } catch (e: RPCException) {
         RPCResponse(

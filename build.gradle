@@ -2,7 +2,7 @@ group 'ivieleague'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.2.0'
+    ext.kotlin_version = '1.2.20'
 
     repositories {
         mavenCentral()
@@ -44,14 +44,15 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
     testCompile group: 'junit', name: 'junit', version: '4.12'
 
-// https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-server
-    compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.4.8.v20171121'
 
     compile 'org.jetbrains.xodus:xodus-openAPI:1.0.5'
     compile 'org.jetbrains.xodus:xodus-entity-store:1.0.5'
 
     compile group: 'org.mindrot', name: 'jbcrypt', version: '0.3m'
     compile 'com.auth0:java-jwt:3.2.0'
+
+    compile "com.sparkjava:spark-core:2.7.1"
+//    compile "com.sparkjava:spark-kotlin:1.0.0-alpha"
 
 //    compile group: 'org.postgresql', name: 'postgresql', version: '42.1.1'
 //    compile 'com.esotericsoftware:reflectasm:1.11.3'
