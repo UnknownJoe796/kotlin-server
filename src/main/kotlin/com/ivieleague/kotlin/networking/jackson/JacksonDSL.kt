@@ -1,12 +1,15 @@
 package com.ivieleague.kotlin.networking.jackson
 
 import com.fasterxml.jackson.core.JsonFactory
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 
 object MyJackson {
     val factory = JsonFactory()
     val mapper = ObjectMapper(factory)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+
 }
 
 fun jacksonObject(vararg items: Pair<String, JsonNode>) = MyJackson.mapper.createObjectNode().apply {

@@ -36,9 +36,9 @@ data class TokenInformation(
                     .getClaim("user_id")
                     .asString() ?: throw IllegalArgumentException("JWT does not contain a user_id claim!")
         } catch (e: TokenExpiredException) {
-            throw exceptionUnauthorized("This token has expired")
+            throw IllegalArgumentException("This token has expired")
         } catch (e: JWTVerificationException) {
-            throw exceptionBadRequest("The token could not be parsed properly")
+            throw IllegalArgumentException("The token could not be parsed properly")
         }
         return id
     }
@@ -64,9 +64,9 @@ data class TokenInformation(
             )
 
         } catch(e: TokenExpiredException) {
-            throw exceptionUnauthorized("This token has expired")
+            throw IllegalArgumentException("This token has expired")
         } catch(e: JWTVerificationException) {
-            throw exceptionBadRequest("The token could not be parsed properly")
+            throw IllegalArgumentException("The token could not be parsed properly")
         }
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.ivieleague.kotlin.server.type.meta.SPrimitiveClass
 
@@ -24,6 +25,7 @@ class SList<T> private constructor(val ofType: SType<T>) : SType<List<T>> {
 
     override fun parse(node: JsonNode?): List<T> {
         if (node == null) return default
+        if (node !is ArrayNode) throw IllegalArgumentException("Node must be an array node!")
 
         val result = ArrayList<T>()
         for (value in node.elements()) {

@@ -13,6 +13,7 @@ class Transaction(
         val readOnly: Boolean = false,
         val required: Boolean = false
 ) {
+    val cache = HashMap<Any, Any?>()
     val onCommit = ArrayList<() -> Unit>()
     val onFail = ArrayList<() -> Unit>()
     var finished = false
@@ -28,6 +29,9 @@ class Transaction(
         finished = true
         onFail.invokeAll()
     }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T> cached(key: Any, getter: () -> T): T = cache.getOrPut(key, getter) as T
 }
 
 inline fun <T> Transaction.use(action: (Transaction) -> T): T = try {

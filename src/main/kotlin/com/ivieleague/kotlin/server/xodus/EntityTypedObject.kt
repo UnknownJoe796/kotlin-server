@@ -72,7 +72,7 @@ class EntityTypedObject(
         if (field == idField)
             return entity.id.toString() as T
         val raw = entity.getProperty(field.key)
-        return if (raw == null) field.default
+        return if (raw == null) field.defaultGenerator()
         else convertFromXodus<T>(field.type, raw)
     }
 
